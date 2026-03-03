@@ -10,7 +10,11 @@ app = FastAPI()
 @app.api_route("/{path:path}", methods=["POST"])
 async def proxy_request(request: Request, path: str)-> dict:
     url = f"http://{config.PROXY_TARGET_HOST}:{config.PROXY_TARGET_PORT}/{path}"
-    body = await request.json()
+
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON request body")
     if "user" not in body:
         raise HTTPException(status_code=400, detail="Missing 'user' key in request body")
     async with httpx.AsyncClient() as client:
@@ -18,10 +22,16 @@ async def proxy_request(request: Request, path: str)-> dict:
         return await process_response(response=response)
     
 async def process_response(response: httpx.Response):
-    body = response.json()
+
+    try:
+        body = response.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON response body")
+
     if "user" not in body:
         raise HTTPException(status_code=400, detail="Missing 'user' key in response body")
-    body.pop("customer", None) 
+
+    body.pop("user", None)
     return body
 
 def main():

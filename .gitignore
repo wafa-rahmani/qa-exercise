@@ -8,3 +8,11 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Node / Playwright assets
+node_modules/
+package-lock.json
+
+# Test artifacts (Playwright)
+tests/test-results/
+tests/playwright-report/

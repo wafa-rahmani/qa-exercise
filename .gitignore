@@ -8,3 +8,10 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Node / JS dependencies
+node_modules/
+package-lock.json
+
+# Test reports
+tests/reports/

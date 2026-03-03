@@ -13,14 +13,24 @@ async def proxy_request(request: Request, path: str)-> dict:
     body = await request.json()
     if "user" not in body:
         raise HTTPException(status_code=400, detail="Missing 'user' key in request body")
+    if "password" not in body:
+        raise HTTPException(status_code=400, detail="Missing 'password' key in request body")
     async with httpx.AsyncClient() as client:
         response = await client.request(method=request.method, url=url, json=body)
         return await process_response(response=response)
     
 async def process_response(response: httpx.Response):
     body = response.json()
+
+    if not response.is_success:
+        raise HTTPException(status_code=response.status_code, detail=body)
+
     if "user" not in body:
         raise HTTPException(status_code=400, detail="Missing 'user' key in response body")
+
+    if "password" not in body:
+        raise HTTPException(status_code=400, detail="Missing 'password' key in response body")
+
     body.pop("user", None)
     return body
 

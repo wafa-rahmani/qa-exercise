@@ -5,20 +5,18 @@ This folder contains comprehensive automated Playwright tests for the FastAPI pr
 ## Folder Structure
 
 ```
-tests/
+qa-exercise/
 ├── README.md                      # This file
 ├── package.json                   # npm configuration and dependencies
 ├── playwright.config.js           # Playwright configuration with tracing and HTML reports
-├── specs/
-│   ├── client-to-proxy.spec.js   # CLIENT to PROXY request validation tests (4 tests)
-│   ├── proxy-to-downstream.spec.js # PROXY to DOWNSTREAM forwarding tests (2 tests)
-│   ├── downstream-to-proxy.spec.js # DOWNSTREAM to PROXY response analysis tests (1 test)
-│   ├── proxy-to-client.spec.js   # PROXY to CLIENT response transformation tests (2 tests)
-│   └── edge-cases.spec.js        # Additional edge case tests (2 tests)
+├── tests/
+│   ├── downstream.spec.js        # Downstream server tests (3 tests)
+│   └── proxy.spec.js             # Proxy tests (8 tests)
 ├── fixtures/
-│   └── test-base.js              # Custom Playwright test base with shared fixtures
+│   └── request.js                # Custom Playwright test fixtures (proxyClient, downstreamClient)
 └── utils/
-    ├── testData.json             # Centralized test data (users, invalid requests, endpoints)
+    ├── config.json               # API configuration (endpoints, baseURL)
+    ├── testData.json             # Test data (users, invalid requests/formats)
     └── apiHelper.js              # Reusable API interaction and validation functions
 ```
 
@@ -31,32 +29,42 @@ Defines npm scripts and Playwright test dependencies:
 
 ### `playwright.config.js`
 Playwright configuration with:
-- **Test Directory:** `./specs` - where test files live
-- **Workers:** 1 worker (prevents port conflicts with downstream server)
+- **Test Directory:** `./tests` - where test files live
+- **Workers:** 1 worker (prevents port conflicts)
 - **Tracing:** Enabled on first retry to capture detailed execution traces
 - **Reporter:** HTML report in `playwright-report` directory
-- **Base URL:** `http://127.0.0.1:8000` (proxy service)
 - **Retries:** 1 retry on failure
 
-### `fixtures/test-base.js`
-Custom Playwright test base extending the default test with shared fixtures:
+### `fixtures/request.js`
+Custom Playwright test fixtures extending the default test:
 
-1. **`downstreamServer` (worker-scoped, auto)**
-   - Mock HTTP server simulating the downstream service
-   - Runs on `127.0.0.1:8085` (matches `config.py`)
-   - Started once per worker, shared across all tests
-   - Automatically shut down when tests complete
-
-2. **`apiClient` (test-scoped)**
-   - Provides a Playwright `APIRequestContext` bound to the proxy (`http://127.0.0.1:8000`)
+1. **`proxyClient` (test-scoped)**
+   - Provides a Playwright `APIRequestContext` bound to the proxy server
+   - Base URL configured from `config.json` (default: `http://127.0.0.1:8000`)
    - Used to make HTTP requests to the proxy service
    - Automatically disposed after each test
 
+2. **`downstreamClient` (test-scoped)**
+   - Provides a Playwright `APIRequestContext` bound to the downstream server
+   - Base URL configured from `config.json` (default: `http://127.0.0.1:8085`)
+   - Used to make direct HTTP requests to the downstream service
+   - Automatically disposed after each test
+
+### `utils/config.json`
+Centralized API configuration file containing:
+- **`endpoints`** - Mapping of logical endpoint names to API paths (e.g., login, unknown)
+- **`baseURL`** - Server base URLs for proxy and downstream services
+
+Benefits:
+- Single source of truth for API configuration
+- Easy to change endpoints or server URLs
+- Used by both test fixtures and test specs
+
 ### `utils/testData.json`
 Centralized test data file containing:
-- **`validUsers`** - Array of valid user credentials (user ID + password) for testing
-- **`invalidRequests`** - Array of invalid request scenarios (missing user, missing password, empty/null values)
-- **`endpoints`** - Mapping of logical endpoint names to API paths
+- **`validUsers`** - Valid user credentials (user ID + password) for testing
+- **`invalidRequests`** - Invalid request scenarios (missing user, missing password)
+- **`invalidFormats`** - Invalid data formats (missing password, missing user)
 
 Benefits:
 - Single source of truth for test data
@@ -68,61 +76,56 @@ Benefits:
 Reusable API interaction and validation functions:
 
 **Request Helpers:**
-- `sendPostRequest(apiClient, endpoint, data)` - Generic POST request
+- `LoginToProxyRequest(proxyClient, endpoint, user, password)` - Send login request to proxy server
+- `LoginToDownstreamRequest(downstreamClient, endpoint, user, password)` - Send login request to downstream server
 - `sendInvalidJsonRequest(apiClient, endpoint, body)` - Send request with invalid JSON format
-- `sendLoginRequest(apiClient, endpoint, user, password)` - Convenience wrapper for login
 
 **Response Helpers:**
 - `getResponseBody(response)` - Parse JSON response body
 - `validateResponseFields(body, expectedFields)` - Check if expected fields exist
-- `validateFieldsRemoved(body, forbiddenFields)` - Check if fields are removed
 - `validateProxyResponse(body)` - Validate proxy-specific behavior (user removed, other fields present)
 
 Benefits:
 - DRY principle - no duplicated code in tests
+- Clear separation between proxy and downstream requests
 - Consistent API interactions across all tests
 - Easy to add new helper functions
 - Simplified test assertions
 
-### Test Specifications (specs/)
+### Test Specifications (tests/)
 
-Tests are organized into 5 separate spec files by flow category for better maintainability:
+Tests are organized into 2 spec files by scope for better maintainability:
 
-#### `client-to-proxy.spec.js` - CLIENT <==> PROXY: Request Validation (4 tests)
-Validates how the proxy handles incoming requests from the client.
-1. **User key present** - Valid request should be accepted
-2. **User key missing** - Should return 400
-3. **Password key missing** - Should return 400
+#### `downstream.spec.js` - Downstream Server Tests (3 tests)
+Validates all interactions with the downstream server including request forwarding and response analysis.
+
+**PROXY <==> DOWNSTREAM: Request Format Tests**
+1. **Sends user key to downstream server** - Validates proxy forwards requests correctly through the proxy
+2. **Error 400 if downstream validation fails** - Proxy returns 400 when downstream rejects the request
+
+**DOWNSTREAM <==> PROXY: Response Analysis Tests**
+3. **Response contains user key - should process** - Validates downstream returns proper response with user key
+
+**Covers:** Request forwarding, downstream communication, and response processing
+
+#### `proxy.spec.js` - Proxy Tests (8 tests)
+Validates all proxy functionality including request validation, response transformation, and edge cases.
+
+**CLIENT <==> PROXY: Request Validation Tests**
+1. **User key present in request** - Valid request should be accepted
+2. **User key missing in request** - Should return 400
+3. **Password key missing in request** - Should return 400
 4. **Invalid JSON format** - Should return 400
 
-**Covers:** Requirements 1 & 2 (JSON validation and user key presence)
+**PROXY <==> CLIENT: Response Validation Tests**
+5. **User key removed from response** - Validates user field is stripped from response
+6. **Other fields preserved in response** - Validates response integrity
 
-#### `proxy-to-downstream.spec.js` - PROXY <==> DOWNSTREAM: Request Format (2 tests)
-Validates how the proxy forwards requests to the downstream server.
-5. **Sends user key to downstream** - Validates proxy forwards user correctly
-6. **Downstream validation fails** - Proxy should return 400 if downstream rejects
+**Edge Cases Tests**
+7. **Unknown API path returns 404** - Tests error handling for invalid endpoints
+8. **Multiple valid users can authenticate** - Data-driven test with all users from testData.json
 
-**Covers:** Request forwarding and downstream communication
-
-#### `downstream-to-proxy.spec.js` - DOWNSTREAM <==> PROXY: Response Analysis (1 test)
-Validates how the proxy processes responses from the downstream server.
-7. **Response contains user key** - Validates proxy receives and processes user
-
-**Covers:** Requirement 4 (Response must contain user key from downstream)
-
-#### `proxy-to-client.spec.js` - PROXY <==> CLIENT: Response Validation (2 tests)
-Validates how the proxy transforms responses before sending to the client.
-8. **User key removed** - Validates Requirement 5 (user stripping)
-9. **Other fields preserved** - Validates response integrity
-
-**Covers:** Requirement 5 (User key removal from response)
-
-#### `edge-cases.spec.js` - Additional Edge Cases (2 tests)
-Covers additional scenarios for robust proxy validation.
-10. **Unknown API path** - Should return 404
-11. **Multiple valid users** - Data-driven test with all users from testData.json
-
-**Covers:** Error handling and data-driven testing
+**Covers:** Requirements 1, 2, 3, and 5 (JSON validation, request validation, response transformation)
 
 ## Requirements Covered
 
@@ -130,11 +133,11 @@ All 5 original requirements are comprehensively tested across multiple scenarios
 
 | Requirement | Primary Tests | Status |
 |------------|---------------|--------|
-| 1. Proxy expects JSON request body | Test 4 (invalid JSON format) | ✅ |
-| 2. Request must have "user" key | Tests 1, 2 (missing user, missing password) | ✅ |
-| 3. Response must be valid JSON | Test 7 (happy path validation) | ✅ |
-| 4. Response must have "user" key | Test 7 (downstream includes user) | ✅ |
-| 5. "user" key is removed from response | Tests 8, 9, 11 (user removal + field preservation) | ✅ |
+| 1. Proxy expects JSON request body | proxy.spec.js: Invalid JSON format test | ✅ |
+| 2. Request must have "user" key | proxy.spec.js: Missing user/password tests | ✅ |
+| 3. Response must be valid JSON | All tests validate JSON responses | ✅ |
+| 4. Response must have "user" key | downstream.spec.js: Downstream response test | ✅ |
+| 5. "user" key is removed from response | proxy.spec.js: User removal + field preservation tests | ✅ |
 
 ### Flow Coverage
 
@@ -150,19 +153,21 @@ All 5 original requirements are comprehensively tested across multiple scenarios
 ## Test Architecture
 
 ### Organized Test Structure
-Tests are split into 5 separate spec files by flow category:
-- **Improved maintainability:** Each file focuses on a specific aspect of the proxy flow
-- **Better organization:** Easy to locate tests for specific functionality
-- **Parallel development:** Team members can work on different test files simultaneously
-- **Clear separation of concerns:** CLIENT↔PROXY, PROXY↔DOWNSTREAM, and edge cases are isolated
-- **Easier debugging:** Failures in specific flow categories are quickly identifiable
-- **Scalability:** New tests can be added to the appropriate category file
+Tests are split into 2 spec files by scope:
+- **downstream.spec.js:** Focuses on downstream server interactions and proxy-to-downstream forwarding
+- **proxy.spec.js:** Focuses on proxy functionality, request validation, response transformation, and edge cases
+- **Clear separation of concerns:** Downstream tests vs proxy tests are isolated
+- **Improved maintainability:** Each file has a focused purpose
+- **Easier debugging:** Failures are quickly categorized by scope
+- **Scalability:** New tests can be added to the appropriate file
 
 ### Data-Driven Approach
-Tests use centralized test data from `utils/testData.json` to:
+Tests use centralized data from `utils/testData.json` and `utils/config.json`:
+- **testData.json:** User credentials and invalid request scenarios
+- **config.json:** API endpoints and server URLs
 - Avoid hardcoded values in test specs
 - Enable easy addition of new test scenarios
-- Support parameterized testing (e.g., Test 13 runs with all users)
+- Support parameterized testing (e.g., multiple users authentication test)
 - Maintain consistency across tests
 
 ### Reusable Utilities
@@ -175,23 +180,23 @@ The `utils/apiHelper.js` module provides:
 Example comparison:
 ```javascript
 // Without helpers (verbose)
-const response = await apiClient.post('/api/login', {
+const response = await proxyClient.post('/api/login', {
     data: { user: 40, password: '12345' }
 });
 const body = await response.json();
 expect(body.user).toBeUndefined();
 
 // With helpers (concise)
-const response = await sendLoginRequest(apiClient, '/api/login', 40, '12345');
+const response = await LoginToProxyRequest(proxyClient, '/api/login', 40, '12345');
 const body = await getResponseBody(response);
 expect(validateProxyResponse(body).userRemoved).toBe(true);
 ```
 
 ### Fixture Pattern
 Tests leverage Playwright's fixture system for:
-- **Resource management:** Automatic setup/teardown of downstream server and API client
-- **Isolation:** Each test gets a fresh API client context
-- **Performance:** Worker-scoped fixtures (downstream server) shared across tests
+- **Resource management:** Automatic setup/teardown of API clients
+- **Isolation:** Each test gets fresh proxyClient and downstreamClient contexts
+- **Flexibility:** Tests can interact with either proxy or downstream server
 - **Reliability:** No manual cleanup required, reduces flaky tests
 
 ## How to Use
@@ -199,6 +204,7 @@ Tests leverage Playwright's fixture system for:
 ### Prerequisites
 - Node.js (LTS version) installed
 - Proxy service running on `http://127.0.0.1:8000`
+- Downstream service running on `http://127.0.0.1:8085`
 
 ### Install Dependencies
 ```bash
@@ -237,23 +243,22 @@ npx playwright show-trace test-results/[trace-path]/trace.zip
 ## Test Execution Flow
 
 1. **Test Start**
-   - Playwright loads the test base with fixtures
-   - `downstreamServer` fixture (worker-scoped) starts once per worker
-   - `apiClient` fixture is created for the test
+   - Playwright loads the test with fixtures from `fixtures/request.js`
+   - `proxyClient` and/or `downstreamClient` fixtures are created based on test needs
+   - Base URLs loaded from `config.json`
 
 2. **Test Execution**
-   - Test sends HTTP request via `apiClient` to proxy (`127.0.0.1:8000`)
-   - Proxy validates request, forwards to downstream (`127.0.0.1:8085`)
-   - Downstream returns response based on request path
-   - Proxy validates response, modifies it, returns to test
+   - Test sends HTTP request via `proxyClient` to proxy (e.g., `127.0.0.1:8000`) OR
+   - Test sends HTTP request via `downstreamClient` to downstream (e.g., `127.0.0.1:8085`)
+   - For proxy tests: Proxy validates request, forwards to downstream, processes response
+   - For downstream tests: Direct interaction with downstream server
 
 3. **Test Verification**
    - Test assertions validate HTTP status and response body
    - Pass/fail recorded
 
 4. **Test Cleanup**
-   - `apiClient` disposed automatically
-   - After all tests, `downstreamServer` shuts down
+   - `proxyClient` and `downstreamClient` disposed automatically
 
 ## Important Notes
 
@@ -268,20 +273,22 @@ The downstream server generates:
 Tests use flexible assertions (`toBeTruthy()`, `typeof token === 'string'`) to handle randomness.
 
 ### Port Configuration
-- **Proxy:** `127.0.0.1:8000` (configured in `playwright.config.js`)
-- **Downstream:** `127.0.0.1:8085` (configured in `fixtures/test-base.js`)
+- **Proxy:** `127.0.0.1:8000` (configured in `utils/config.json`)
+- **Downstream:** `127.0.0.1:8085` (configured in `utils/config.json`)
 
-Matches the Python `config.py` defaults.
+Both URLs are centralized in `config.json` for easy configuration.
 
 ## Troubleshooting
 
 ### Tests fail with "Connection refused"
 - Ensure proxy is running: `cd .. && uv run main.py`
 - Check proxy is listening on `127.0.0.1:8000`
+- Ensure downstream server is running on `127.0.0.1:8085`
 
 ### Tests fail with "Port already in use"
-- Kill old process: `lsof -ti tcp:8000 | xargs kill`
-- Restart proxy
+- Kill proxy process: `lsof -ti tcp:8000 | xargs kill`
+- Kill downstream process: `lsof -ti tcp:8085 | xargs kill`
+- Restart both services
 
 ### Report not generating
 - Check `playwright-report/` directory exists

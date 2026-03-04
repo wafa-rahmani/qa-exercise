@@ -1,32 +1,70 @@
-# Manual Testing Guide with Postman
+# Manual Testing Guide for Proxy Service
 
-This guide explains how to manually test all proxy service cases using Postman without running the automated test suite.
+> **Responding to: "Please also propose how can this service be tested manually."**
+
+This comprehensive guide demonstrates **manual testing approaches** for the proxy service without relying on automated test suites. Manual testing is valuable for:
+- **Exploratory testing** - Discovering edge cases and unexpected behaviors
+- **Quick validation** - Rapid testing during development
+- **Debugging** - Understanding request/response flows in detail
+- **Documentation** - Demonstrating API usage to stakeholders
+- **Learning** - Understanding how the proxy works
+
+## Two Manual Testing Approaches
+
+### 🔷 Postman (GUI-based)
+A visual, user-friendly API testing tool with features like:
+- Request collections and organization
+- Visual response inspection
+- Test scripting and assertions
+- Environment variables
+- Team collaboration
+- Request history
+
+**Best for:** Interactive testing, learning the API, creating shareable test collections
+
+### 🔶 curl (Command-line)
+A lightweight, scriptable HTTP client that:
+- Runs in any terminal
+- Works on all platforms
+- Can be automated in bash scripts
+- Integrates into CI/CD pipelines
+- Requires no installation (built-in on Unix systems)
+
+**Best for:** Quick testing, automation, remote server testing, scripting
+
+Both methods are covered in this guide with **step-by-step instructions** for all test cases.
 
 ## Prerequisites
 
+### For Postman Testing:
 1. **Postman** - Download from [postman.com](https://www.postman.com/downloads/)
-2. **Proxy Service Running** - On `http://127.0.0.1:8000`
-3. **Downstream Server Running** - On `127.0.0.1:8085` (started automatically when tests run, or manually via Node.js)
+
+### For curl Testing:
+1. **curl** - Pre-installed on macOS/Linux, or download from [curl.se](https://curl.se/download.html)
+2. **jq** (optional) - For pretty-printing JSON responses: `brew install jq` (macOS) or `apt install jq` (Linux)
+
+### Required Services:
+1. **Proxy Service Running** - On `http://127.0.0.1:8000`
+2. **Downstream Server Running** - On `127.0.0.1:8085`
 
 ## Setup Instructions
 
 ### Step 1: Start the Proxy Service
 ```bash
-cd /Users/wafarahmani/Documents/Projects/qa-exercise
+cd qa-exercise
 uv run main.py
 ```
 The proxy will start on `http://127.0.0.1:8000`
 
-### Step 2: Start the Downstream Server (Optional)
-If you want to test manually without the automated fixtures, start a simple downstream server:
+### Step 2: Start the Downstream Server
 ```bash
-node /Users/wafarahmani/Documents/Projects/qa-exercise/downstreamServer.js &
+node start-downstream-server.js
 ```
 The downstream server will start on `127.0.0.1:8085`
 
-### Step 3: Open Postman
-- Launch Postman
-- Create a new collection named "Proxy Service Tests"
+### Step 3: Choose Your Testing Method
+- **For Postman:** Launch Postman and create a new collection named "Proxy Service Tests"
+- **For curl:** Open a terminal window
 
 ---
 
@@ -71,6 +109,29 @@ The downstream server will start on `127.0.0.1:8085`
 5. Go to Headers tab, add `Content-Type: application/json`
 6. Go to Body tab → select "raw" → paste the JSON above
 7. Click "Send"
+
+**Using curl:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}'
+```
+
+**With pretty-printed output (using jq):**
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' | jq
+```
+
+**Expected curl output:**
+```json
+{
+  "password": "12345",
+  "token": "abc123...",
+  "expires_in": 3600
+}
+```
 
 ---
 
@@ -117,6 +178,19 @@ The downstream server will start on `127.0.0.1:8085`
 6. Click "Send"
 7. Verify status code is 400
 
+**Using curl:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"password": "12345"}' \
+  -w "\nHTTP Status: %{http_code}\n"
+```
+
+**Expected output:**
+```
+HTTP Status: 400
+```
+
 ---
 
 #### Test 3: Password key missing in request - should return 400
@@ -148,6 +222,19 @@ The downstream server will start on `127.0.0.1:8085`
 6. Click "Send"
 7. Verify status code is 400
 
+**Using curl:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40}' \
+  -w "\nHTTP Status: %{http_code}\n"
+```
+
+**Expected output:**
+```
+HTTP Status: 400
+```
+
 ---
 
 #### Test 4: Invalid JSON format - should return 400
@@ -177,6 +264,19 @@ The downstream server will start on `127.0.0.1:8085`
 6. Enter: `not-a-json-body`
 7. Click "Send"
 8. Verify status code is 400
+
+**Using curl:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d 'not-a-json-body' \
+  -w "\nHTTP Status: %{http_code}\n"
+```
+
+**Expected output:**
+```
+HTTP Status: 400
+```
 
 ---
 
@@ -225,6 +325,15 @@ The downstream server will start on `127.0.0.1:8085`
 5. Click "Send"
 6. Verify user key is NOT in response
 
+**Using curl:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 100, "password": "password123"}' | jq
+```
+
+**Verify:** Response should NOT contain "user" field
+
 ---
 
 #### Test 6: Downstream validation fails - should return 400
@@ -262,6 +371,14 @@ The downstream server will start on `127.0.0.1:8085`
 5. Go to Body tab → paste JSON with only user key
 6. Click "Send"
 7. Verify status code is 400
+
+**Using curl:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40}' \
+  -w "\nHTTP Status: %{http_code}\n"
+```
 
 ---
 
@@ -311,6 +428,17 @@ The downstream server will start on `127.0.0.1:8085`
    - `user` key is NOT present
    - `password`, `token`, `expires_in` ARE present
 
+**Using curl:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 999, "password": "securePass456"}' | jq
+```
+
+**Verify:**
+- ❌ No "user" field in response
+- ✅ "password", "token", "expires_in" are present
+
 ---
 
 ### Group 4: PROXY <==> CLIENT: Response Validation
@@ -353,6 +481,20 @@ The downstream server will start on `127.0.0.1:8085`
 3. Follow same setup as Test 1
 4. Click "Send"
 5. **Critical Check:** Look at response body and confirm NO `user` key exists
+
+**Using curl:**
+```bash
+# Test and check if 'user' key exists in response
+curl -s -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' | jq 'has("user")'
+```
+
+**Expected output:**
+```
+false
+```
+*("false" means user key is successfully removed)*
 
 ---
 
@@ -399,6 +541,24 @@ The downstream server will start on `127.0.0.1:8085`
    - `token` = non-empty string
    - `expires_in` = 3600
 
+**Using curl:**
+```bash
+# Check all required fields are present
+curl -s -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' | \
+  jq '{password, token, expires_in}'
+```
+
+**Expected output:**
+```json
+{
+  "password": "12345",
+  "token": "<some-token>",
+  "expires_in": 3600
+}
+```
+
 ---
 
 ### Group 5: Edge Cases
@@ -432,6 +592,19 @@ The downstream server will start on `127.0.0.1:8085`
 5. Go to Body tab → paste valid JSON
 6. Click "Send"
 7. Verify status code is 404
+
+**Using curl:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/unknown \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' \
+  -w "\nHTTP Status: %{http_code}\n"
+```
+
+**Expected output:**
+```
+HTTP Status: 404
+```
 
 ---
 
@@ -476,6 +649,123 @@ The downstream server will start on `127.0.0.1:8085`
 4. Run each request separately
 5. Verify all return 200 with user key removed
 
+**Using curl (run all three):**
+```bash
+# User 1
+curl -s -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' \
+  -w "\nUser 40 Status: %{http_code}\n\n"
+
+# User 2
+curl -s -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 100, "password": "password123"}' \
+  -w "\nUser 100 Status: %{http_code}\n\n"
+
+# User 3
+curl -s -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 999, "password": "securePass456"}' \
+  -w "\nUser 999 Status: %{http_code}\n\n"
+```
+
+**Expected:** All three should return `Status: 200`
+
+---
+
+## curl Command Tips
+
+### Useful curl Options
+
+**Display HTTP Status Code:**
+```bash
+curl -w "\nHTTP Status: %{http_code}\n" [URL]
+```
+
+**Silent Mode (no progress bar):**
+```bash
+curl -s [URL]
+```
+
+**Include Response Headers:**
+```bash
+curl -i [URL]
+```
+
+**Verbose Output (for debugging):**
+```bash
+curl -v [URL]
+```
+
+**Save Response to File:**
+```bash
+curl [URL] -o response.json
+```
+
+### Using jq for JSON Processing
+
+**Pretty Print:**
+```bash
+curl [URL] | jq
+```
+
+**Extract Specific Field:**
+```bash
+curl [URL] | jq '.token'
+```
+
+**Check if Field Exists:**
+```bash
+curl [URL] | jq 'has("user")'
+```
+
+**Select Multiple Fields:**
+```bash
+curl [URL] | jq '{password, token}'
+```
+
+### Bash Script for All Tests
+
+Create a file `test_proxy.sh`:
+```bash
+#!/bin/bash
+
+BASE_URL="http://127.0.0.1:8000"
+
+echo "Test 1: Valid Request"
+curl -s -X POST $BASE_URL/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' \
+  -w "\nStatus: %{http_code}\n\n"
+
+echo "Test 2: Missing User Key"
+curl -s -X POST $BASE_URL/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"password": "12345"}' \
+  -w "\nStatus: %{http_code}\n\n"
+
+echo "Test 3: Missing Password Key"
+curl -s -X POST $BASE_URL/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40}' \
+  -w "\nStatus: %{http_code}\n\n"
+
+echo "Test 4: Invalid JSON"
+curl -s -X POST $BASE_URL/api/login \
+  -H "Content-Type: application/json" \
+  -d 'not-a-json-body' \
+  -w "\nStatus: %{http_code}\n\n"
+
+echo "Test 10: Unknown Path"
+curl -s -X POST $BASE_URL/api/unknown \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' \
+  -w "\nStatus: %{http_code}\n\n"
+```
+
+Run with: `bash test_proxy.sh`
+
 ---
 
 ## Postman Collection Tips
@@ -516,19 +806,51 @@ Create an environment to store base URL:
 
 ## Troubleshooting
 
-### Connection Refused
+### Connection Refused (Postman/curl)
 ```
 Error: connect ECONNREFUSED 127.0.0.1:8000
 ```
-**Solution:** Ensure proxy service is running with `uv run main.py`
+**Solution:** 
+- Ensure proxy service is running with `uv run main.py`
+- Ensure downstream server is running with `node start-downstream-server.js`
+- Check services are listening on correct ports:
+  ```bash
+  lsof -i :8000  # Check proxy
+  lsof -i :8085  # Check downstream
+  ```
 
-### Invalid JSON Error
+### Invalid JSON Error (Postman)
 ```
 400 Bad Request - Invalid JSON
 ```
 **Solution:** 
 - Verify Body tab is set to "raw" and format is "JSON"
 - Check for syntax errors in JSON (missing commas, quotes, etc.)
+
+### curl JSON Syntax Errors
+**Problem:** Shell interprets special characters in JSON
+**Solution:** 
+- Use single quotes around JSON: `-d '{"user": 40}'`
+- Or escape double quotes: `-d "{\"user\": 40}"`
+- On Windows: Use double quotes and escape inner quotes: `-d "{\"user\": 40}"`
+
+### jq Command Not Found
+```
+bash: jq: command not found
+```
+**Solution:**
+- macOS: `brew install jq`
+- Ubuntu/Debian: `sudo apt install jq`
+- Or omit jq and read raw JSON output
+
+### curl: Failed to Connect
+```
+curl: (7) Failed to connect to 127.0.0.1 port 8000: Connection refused
+```
+**Solution:**
+- Verify proxy is running: `curl http://127.0.0.1:8000/docs`
+- Check firewall settings
+- Try using `localhost` instead of `127.0.0.1`
 
 ### User Key Not Removed
 **Solution:**
@@ -582,10 +904,52 @@ Use this checklist to manually verify all 5 requirements:
 
 ---
 
-## Next Steps
+## Quick Reference: curl Commands
 
-After manual testing in Postman:
-1. Run automated tests: `npm test`
-2. Verify results match manual testing
-3. Check HTML report: `npm run test:report`
-4. Review traces for failed tests (if any)
+### Basic Test (200 OK)
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}'
+```
+
+### Test with Status Code
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' \
+  -w "\nHTTP Status: %{http_code}\n"
+```
+
+### Test with Pretty JSON Output
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' | jq
+```
+
+### Verify User Key Removed
+```bash
+curl -s -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' | jq 'has("user")'
+# Should return: false
+```
+
+### Test Missing User (400)
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"password": "12345"}' \
+  -w "\nHTTP Status: %{http_code}\n"
+# Should return: HTTP Status: 400
+```
+
+### Test Unknown Endpoint (404)
+```bash
+curl -X POST http://127.0.0.1:8000/api/unknown \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' \
+  -w "\nHTTP Status: %{http_code}\n"
+# Should return: HTTP Status: 404
+```

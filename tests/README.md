@@ -16,8 +16,7 @@ tests/
 │   ├── proxy-to-client.spec.js   # PROXY to CLIENT response transformation tests (2 tests)
 │   └── edge-cases.spec.js        # Additional edge case tests (2 tests)
 ├── fixtures/
-│   ├── test-base.js              # Custom Playwright test base with shared fixtures
-│   └── downstreamServer.js       # Mock downstream server module
+│   └── test-base.js              # Custom Playwright test base with shared fixtures
 └── utils/
     ├── testData.json             # Centralized test data (users, invalid requests, endpoints)
     └── apiHelper.js              # Reusable API interaction and validation functions
@@ -52,13 +51,6 @@ Custom Playwright test base extending the default test with shared fixtures:
    - Provides a Playwright `APIRequestContext` bound to the proxy (`http://127.0.0.1:8000`)
    - Used to make HTTP requests to the proxy service
    - Automatically disposed after each test
-
-### `fixtures/downstreamServer.js`
-Mock HTTP server simulating the downstream service. Handles:
-- **`/api/login`** - Happy path returning JSON with `user`, `password`, random `token`, and `expires_in`
-- **Any other path** - Returns 404 Not Found
-
-Validates incoming requests require both `user` and `password` keys.
 
 ### `utils/testData.json`
 Centralized test data file containing:

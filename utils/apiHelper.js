@@ -9,7 +9,7 @@ async function sendInvalidJsonRequest(apiClient, endpoint, body) {
     });
 }
 
-async function Login(client, user, password) {
+async function login(client, user, password) {
     return await client.post(config.endpoints.login, {
         data: { user, password },
     });
@@ -45,7 +45,7 @@ function validateProxyResponse(responseBody, expectedFields = ['token', 'passwor
 
 module.exports = {
     sendInvalidJsonRequest,
-    Login,
+    login,
     validateResponseFields,
     getResponseBody,
     validateProxyResponse,

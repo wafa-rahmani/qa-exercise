@@ -1,6 +1,6 @@
 const { test, expect } = require('../fixtures/test-base');
 const {
-    sendLoginRequest,
+    sendProxyLoginRequest,
     getResponseBody,
 } = require('../utils/apiHelper');
 const testData = require('../utils/testData.json');
@@ -12,10 +12,10 @@ const testData = require('../utils/testData.json');
  * Covers requirement 4: Response must contain user key from downstream.
  */
 
-test('DOWNSTREAM to PROXY: response contains user key - should process', async ({ apiClient }) => {
-    const validUser = testData.validUsers[1];
-    const response = await sendLoginRequest(
-        apiClient,
+test('DOWNSTREAM to PROXY: response contains user key - should process', async ({ proxyClient }) => {
+    const validUser = testData.validUsers.user1;
+    const response = await sendProxyLoginRequest(
+        proxyClient,
         testData.endpoints.login,
         validUser.user,
         validUser.password

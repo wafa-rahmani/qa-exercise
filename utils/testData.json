@@ -1,42 +1,48 @@
 {
-  "validUsers": [
-    {
+  "validUsers": {
+    "user1": {
+      "id": "user1",
       "user": 40,
       "password": "12345"
     },
-    {
+    "user2": {
+      "id": "user2",
       "user": 100,
       "password": "password123"
     },
-    {
+    "user3": {
+      "id": "user3",
       "user": 999,
       "password": "securePass456"
     }
-  ],
-  "invalidFormats": [
-    {
+  },
+  "invalidFormats": {
+    "missingPassword": {
       "user": 40
     },
-    {
+    "missingUser": {
       "password": "password123"
     }
-  ],
-  "invalidRequests": [
-    {
+  },
+  "invalidRequests": {
+    "missingUserKey": {
+      "id": "missingUserKey",
       "description": "Missing user key",
       "data": {
         "password": "12345"
       },
       "expectedStatus": 400
     },
-    {
+    "missingPasswordKey": {
+      "id": "missingPasswordKey",
       "description": "Missing password key",
       "data": {
         "user": 40
       },
       "expectedStatus": 400
     },
-    {
+    "emptyUserValue": {
+      "id": "emptyUserValue",
       "description": "Empty user value",
       "data": {
         "user": "",
@@ -44,7 +50,8 @@
       },
       "expectedStatus": 400
     },
-    {
+    "nullUserValue": {
+      "id": "nullUserValue",
       "description": "Null user value",
       "data": {
         "user": null,
@@ -52,7 +59,7 @@
       },
       "expectedStatus": 400
     }
-  ],
+  },
   "endpoints": {
     "login": "/api/login",
     "unknown": "/api/unknown"

@@ -18,6 +18,14 @@ async function sendLoginRequest(apiClient, endpoint, user, password) {
     return await sendPostRequest(apiClient, endpoint, { user, password });
 }
 
+async function sendProxyLoginRequest(proxyClient, endpoint, user, password) {
+    return await sendPostRequest(proxyClient, endpoint, { user, password });
+}
+
+async function sendProxyToDownstreamLoginRequest(proxyClient, endpoint, user, password) {
+    return await sendPostRequest(proxyClient, endpoint, { user, password });
+}
+
 function validateResponseFields(responseBody, expectedFields) {
     const missing = [];
     for (const field of expectedFields) {
@@ -63,6 +71,8 @@ module.exports = {
     sendPostRequest,
     sendInvalidJsonRequest,
     sendLoginRequest,
+    sendProxyLoginRequest,
+    sendProxyToDownstreamLoginRequest,
     validateResponseFields,
     validateFieldsRemoved,
     getResponseBody,

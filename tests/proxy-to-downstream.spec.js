@@ -1,7 +1,7 @@
 const { test, expect } = require('../fixtures/test-base');
 const {
     sendPostRequest,
-    sendLoginRequest,
+    sendProxyToDownstreamLoginRequest,
     getResponseBody,
 } = require('../utils/apiHelper');
 const testData = require('../utils/testData.json');
@@ -13,10 +13,10 @@ const testData = require('../utils/testData.json');
  * Ensures the proxy correctly sends the user key and handles downstream validation.
  */
 
-test('PROXY to DOWNSTREAM: sends user key to downstream server', async ({ apiClient }) => {
-    const validUser = testData.validUsers[0];
-    const response = await sendLoginRequest(
-        apiClient,
+test('PROXY to DOWNSTREAM: sends user key to downstream server', async ({ proxyClient }) => {
+    const validUser = testData.validUsers.user1;
+    const response = await sendProxyToDownstreamLoginRequest(
+        proxyClient,
         testData.endpoints.login,
         validUser.user,
         validUser.password
@@ -29,8 +29,8 @@ test('PROXY to DOWNSTREAM: sends user key to downstream server', async ({ apiCli
     expect(body.token).toBeTruthy();
 });
 
-test('PROXY to DOWNSTREAM: error 400 if downstream validation fails', async ({ apiClient }) => {
-    const response = await sendPostRequest(apiClient, testData.endpoints.login, testData.invalidFormats[0].data);
+test('PROXY to DOWNSTREAM: error 400 if downstream validation fails', async ({ proxyClient }) => {
+    const response = await sendPostRequest(proxyClient, testData.endpoints.login, testData.invalidFormats.missingPassword);
     
     expect(response.status()).toBe(400);
 });

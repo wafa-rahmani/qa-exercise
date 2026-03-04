@@ -1,3 +1,5 @@
+const config = require('./config.json');
+
 async function sendInvalidJsonRequest(apiClient, endpoint, body) {
     return await apiClient.post(endpoint, {
         headers: {
@@ -7,14 +9,14 @@ async function sendInvalidJsonRequest(apiClient, endpoint, body) {
     });
 }
 
-async function LoginToProxyRequest(proxyClient, endpoint, user, password) {
-    return await proxyClient.post(endpoint, {
+async function LoginToProxy(proxyClient, user, password) {
+    return await proxyClient.post(config.endpoints.login, {
         data: { user, password },
     });
 }
 
-async function LoginToDownstreamRequest(downstreamClient, endpoint, user, password) {
-    return await downstreamClient.post(endpoint, {
+async function LoginToDownstream(downstreamClient, user, password) {
+    return await downstreamClient.post(config.endpoints.login, {
         data: { user, password },
     });
 }
@@ -49,8 +51,8 @@ function validateProxyResponse(responseBody, expectedFields = ['token', 'passwor
 
 module.exports = {
     sendInvalidJsonRequest,
-    LoginToProxyRequest,
-    LoginToDownstreamRequest,
+    LoginToProxy,
+    LoginToDownstream,
     validateResponseFields,
     getResponseBody,
     validateProxyResponse,

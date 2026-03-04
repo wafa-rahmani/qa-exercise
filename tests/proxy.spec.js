@@ -1,7 +1,7 @@
 const { test, expect } = require('../fixtures/request');
 const {
     sendInvalidJsonRequest,
-    LoginToProxyRequest,
+    LoginToProxy,
     getResponseBody,
     validateProxyResponse,
 } = require('../utils/apiHelper');
@@ -23,9 +23,8 @@ const testData = require('../utils/testData.json');
 
 test('CLIENT to PROXY: user key present in request - should accept', async ({ proxyClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await LoginToProxyRequest(
+    const response = await LoginToProxy(
         proxyClient,
-        config.endpoints.login,
         validUser.user,
         validUser.password
     );
@@ -67,9 +66,8 @@ test('CLIENT to PROXY: invalid JSON format - should return 400', async ({ proxyC
 
 test('PROXY to CLIENT: user key removed from response', async ({ proxyClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await LoginToProxyRequest(
+    const response = await LoginToProxy(
         proxyClient,
-        config.endpoints.login,
         validUser.user,
         validUser.password
     );
@@ -85,9 +83,8 @@ test('PROXY to CLIENT: user key removed from response', async ({ proxyClient }) 
 
 test('PROXY to CLIENT: other fields preserved in response', async ({ proxyClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await LoginToProxyRequest(
+    const response = await LoginToProxy(
         proxyClient,
-        config.endpoints.login,
         validUser.user,
         validUser.password
     );
@@ -108,21 +105,20 @@ test('PROXY to CLIENT: other fields preserved in response', async ({ proxyClient
 
 test('EDGE CASE: unknown API path returns 404', async ({ proxyClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await LoginToProxyRequest(
-        proxyClient,
-        config.endpoints.unknown,
-        validUser.user,
-        validUser.password
-    );
+    const response = await proxyClient.post(config.endpoints.unknown, {
+        data: {
+            user: validUser.user,
+            password: validUser.password
+        }
+    });
 
     expect(response.status()).toBe(404);
 });
 
 test('EDGE CASE: multiple valid users can authenticate', async ({ proxyClient }) => {
     for (const validUser of Object.values(testData.validUsers)) {
-        const response = await LoginToProxyRequest(
+        const response = await LoginToProxy(
             proxyClient,
-            config.endpoints.login,
             validUser.user,
             validUser.password
         );

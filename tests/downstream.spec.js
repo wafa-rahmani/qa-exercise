@@ -1,7 +1,7 @@
 const { test, expect } = require('../fixtures/request');
 const {
-    LoginToProxyRequest,
-    LoginToDownstreamRequest,
+    LoginToProxy,
+    LoginToDownstream,
     getResponseBody,
 } = require('../utils/apiHelper');
 const config = require('../utils/config.json');
@@ -22,9 +22,8 @@ const testData = require('../utils/testData.json');
 
 test('PROXY to DOWNSTREAM: sends user key to downstream server', async ({ proxyClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await LoginToProxyRequest(
+    const response = await LoginToProxy(
         proxyClient,
-        config.endpoints.login,
         validUser.user,
         validUser.password
     );
@@ -50,9 +49,8 @@ test('PROXY to DOWNSTREAM: error 400 if downstream validation fails', async ({ p
 
 test('DOWNSTREAM to PROXY: response contains user key - should process', async ({ downstreamClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await LoginToDownstreamRequest(
+    const response = await LoginToDownstream(
         downstreamClient,
-        config.endpoints.login,
         validUser.user,
         validUser.password
     );

@@ -76,8 +76,8 @@ Benefits:
 Reusable API interaction and validation functions:
 
 **Request Helpers:**
-- `LoginToProxyRequest(proxyClient, endpoint, user, password)` - Send login request to proxy server
-- `LoginToDownstreamRequest(downstreamClient, endpoint, user, password)` - Send login request to downstream server
+- `LoginToProxy(proxyClient, user, password)` - Send login request to proxy server
+- `LoginToDownstream(downstreamClient, user, password)` - Send login request to downstream server
 - `sendInvalidJsonRequest(apiClient, endpoint, body)` - Send request with invalid JSON format
 
 **Response Helpers:**
@@ -187,7 +187,7 @@ const body = await response.json();
 expect(body.user).toBeUndefined();
 
 // With helpers (concise)
-const response = await LoginToProxyRequest(proxyClient, '/api/login', 40, '12345');
+const response = await LoginToProxy(proxyClient, 40, '12345');
 const body = await getResponseBody(response);
 expect(validateProxyResponse(body).userRemoved).toBe(true);
 ```

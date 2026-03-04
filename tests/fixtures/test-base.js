@@ -1,5 +1,6 @@
 const { test: base, expect, request } = require('@playwright/test');
-const { createProxyDownstreamServer } = require('./downstreamServer');
+// Use the downstream server implementation from the project root.
+const { createProxyDownstreamServer } = require('../../downstreamServer');
 
 const test = base.extend({
 

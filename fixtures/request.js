@@ -1,8 +1,9 @@
 const { test: base, expect, request } = require('@playwright/test');
+const config = require('../utils/config.json');
 
 const test = base.extend({
   proxyClient: async ({}, use) => {
-    const client = await request.newContext({ baseURL: 'http://127.0.0.1:8000' });
+    const client = await request.newContext({ baseURL: config.baseURL.proxy });
     try {
       await use(client);
     } finally {
@@ -11,7 +12,7 @@ const test = base.extend({
   },
 
   downstreamClient: async ({}, use) => {
-    const client = await request.newContext({ baseURL: 'http://127.0.0.1:8085' });
+    const client = await request.newContext({ baseURL: config.baseURL.downstream });
     try {
       await use(client);
     } finally {

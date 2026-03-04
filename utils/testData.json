@@ -59,9 +59,5 @@
       },
       "expectedStatus": 400
     }
-  },
-  "endpoints": {
-    "login": "/api/login",
-    "unknown": "/api/unknown"
   }
 }

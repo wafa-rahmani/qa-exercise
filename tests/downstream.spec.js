@@ -1,10 +1,10 @@
-const { test, expect } = require('../fixtures/test-base');
+const { test, expect } = require('../fixtures/request');
 const {
-    sendPostRequest,
-    sendProxyLoginRequest,
-    sendProxyToDownstreamLoginRequest,
+    LoginToProxyRequest,
+    LoginToDownstreamRequest,
     getResponseBody,
 } = require('../utils/apiHelper');
+const config = require('../utils/config.json');
 const testData = require('../utils/testData.json');
 
 /**
@@ -22,9 +22,9 @@ const testData = require('../utils/testData.json');
 
 test('PROXY to DOWNSTREAM: sends user key to downstream server', async ({ proxyClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await sendProxyToDownstreamLoginRequest(
+    const response = await LoginToProxyRequest(
         proxyClient,
-        testData.endpoints.login,
+        config.endpoints.login,
         validUser.user,
         validUser.password
     );
@@ -37,7 +37,9 @@ test('PROXY to DOWNSTREAM: sends user key to downstream server', async ({ proxyC
 });
 
 test('PROXY to DOWNSTREAM: error 400 if downstream validation fails', async ({ proxyClient }) => {
-    const response = await sendPostRequest(proxyClient, testData.endpoints.login, testData.invalidFormats.missingPassword);
+    const response = await proxyClient.post(config.endpoints.login, {
+        data: testData.invalidFormats.missingPassword,
+    });
     
     expect(response.status()).toBe(400);
 });
@@ -46,11 +48,11 @@ test('PROXY to DOWNSTREAM: error 400 if downstream validation fails', async ({ p
 // DOWNSTREAM <==> PROXY: Response Analysis Tests
 // ============================================================================
 
-test('DOWNSTREAM to PROXY: response contains user key - should process', async ({ proxyClient }) => {
+test('DOWNSTREAM to PROXY: response contains user key - should process', async ({ downstreamClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await sendProxyLoginRequest(
-        proxyClient,
-        testData.endpoints.login,
+    const response = await LoginToDownstreamRequest(
+        downstreamClient,
+        config.endpoints.login,
         validUser.user,
         validUser.password
     );

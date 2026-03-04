@@ -1,0 +1,10 @@
+{
+    "endpoints": {
+        "login": "/api/login",
+        "unknown": "/api/unknown"
+    },
+    "baseURL": {
+        "proxy": "http://127.0.0.1:8000",
+        "downstream": "http://127.0.0.1:8085"
+    }
+}

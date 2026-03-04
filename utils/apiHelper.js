@@ -1,10 +1,3 @@
-
-async function sendPostRequest(apiClient, endpoint, data) {
-    return await apiClient.post(endpoint, {
-        data: data,
-    });
-}
-
 async function sendInvalidJsonRequest(apiClient, endpoint, body) {
     return await apiClient.post(endpoint, {
         headers: {
@@ -14,12 +7,16 @@ async function sendInvalidJsonRequest(apiClient, endpoint, body) {
     });
 }
 
-async function sendProxyLoginRequest(proxyClient, endpoint, user, password) {
-    return await sendPostRequest(proxyClient, endpoint, { user, password });
+async function LoginToProxyRequest(proxyClient, endpoint, user, password) {
+    return await proxyClient.post(endpoint, {
+        data: { user, password },
+    });
 }
 
-async function sendProxyToDownstreamLoginRequest(proxyClient, endpoint, user, password) {
-    return await sendPostRequest(proxyClient, endpoint, { user, password });
+async function LoginToDownstreamRequest(downstreamClient, endpoint, user, password) {
+    return await downstreamClient.post(endpoint, {
+        data: { user, password },
+    });
 }
 
 function validateResponseFields(responseBody, expectedFields) {
@@ -51,10 +48,9 @@ function validateProxyResponse(responseBody, expectedFields = ['token', 'passwor
 }
 
 module.exports = {
-    sendPostRequest,
     sendInvalidJsonRequest,
-    sendProxyLoginRequest,
-    sendProxyToDownstreamLoginRequest,
+    LoginToProxyRequest,
+    LoginToDownstreamRequest,
     validateResponseFields,
     getResponseBody,
     validateProxyResponse,

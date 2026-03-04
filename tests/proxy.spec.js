@@ -1,11 +1,11 @@
-const { test, expect } = require('../fixtures/test-base');
+const { test, expect } = require('../fixtures/request');
 const {
-    sendPostRequest,
     sendInvalidJsonRequest,
-    sendProxyLoginRequest,
+    LoginToProxyRequest,
     getResponseBody,
     validateProxyResponse,
 } = require('../utils/apiHelper');
+const config = require('../utils/config.json');
 const testData = require('../utils/testData.json');
 
 /**
@@ -23,9 +23,9 @@ const testData = require('../utils/testData.json');
 
 test('CLIENT to PROXY: user key present in request - should accept', async ({ proxyClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await sendProxyLoginRequest(
+    const response = await LoginToProxyRequest(
         proxyClient,
-        testData.endpoints.login,
+        config.endpoints.login,
         validUser.user,
         validUser.password
     );
@@ -35,14 +35,18 @@ test('CLIENT to PROXY: user key present in request - should accept', async ({ pr
 
 test('CLIENT to PROXY: user key missing in request - should return 400', async ({ proxyClient }) => {
     const invalidRequest = testData.invalidRequests.missingUserKey;
-    const response = await sendPostRequest(proxyClient, testData.endpoints.login, invalidRequest.data);
+    const response = await proxyClient.post(config.endpoints.login, {
+        data: invalidRequest.data,
+    });
 
     expect(response.status()).toBe(invalidRequest.expectedStatus);
 });
 
 test('CLIENT to PROXY: password key missing in request - should return 400', async ({ proxyClient }) => {
     const invalidRequest = testData.invalidRequests.missingPasswordKey;
-    const response = await sendPostRequest(proxyClient, testData.endpoints.login, invalidRequest.data);
+    const response = await proxyClient.post(config.endpoints.login, {
+        data: invalidRequest.data,
+    });
 
     expect(response.status()).toBe(invalidRequest.expectedStatus);
 });
@@ -50,7 +54,7 @@ test('CLIENT to PROXY: password key missing in request - should return 400', asy
 test('CLIENT to PROXY: invalid JSON format - should return 400', async ({ proxyClient }) => {
     const response = await sendInvalidJsonRequest(
         proxyClient,
-        testData.endpoints.login,
+        config.endpoints.login,
         'not-a-json-body'
     );
 
@@ -63,9 +67,9 @@ test('CLIENT to PROXY: invalid JSON format - should return 400', async ({ proxyC
 
 test('PROXY to CLIENT: user key removed from response', async ({ proxyClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await sendProxyLoginRequest(
+    const response = await LoginToProxyRequest(
         proxyClient,
-        testData.endpoints.login,
+        config.endpoints.login,
         validUser.user,
         validUser.password
     );
@@ -81,9 +85,9 @@ test('PROXY to CLIENT: user key removed from response', async ({ proxyClient }) 
 
 test('PROXY to CLIENT: other fields preserved in response', async ({ proxyClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await sendProxyLoginRequest(
+    const response = await LoginToProxyRequest(
         proxyClient,
-        testData.endpoints.login,
+        config.endpoints.login,
         validUser.user,
         validUser.password
     );
@@ -104,9 +108,9 @@ test('PROXY to CLIENT: other fields preserved in response', async ({ proxyClient
 
 test('EDGE CASE: unknown API path returns 404', async ({ proxyClient }) => {
     const validUser = testData.validUsers.user1;
-    const response = await sendProxyLoginRequest(
+    const response = await LoginToProxyRequest(
         proxyClient,
-        testData.endpoints.unknown,
+        config.endpoints.unknown,
         validUser.user,
         validUser.password
     );
@@ -116,9 +120,9 @@ test('EDGE CASE: unknown API path returns 404', async ({ proxyClient }) => {
 
 test('EDGE CASE: multiple valid users can authenticate', async ({ proxyClient }) => {
     for (const validUser of Object.values(testData.validUsers)) {
-        const response = await sendProxyLoginRequest(
+        const response = await LoginToProxyRequest(
             proxyClient,
-            testData.endpoints.login,
+            config.endpoints.login,
             validUser.user,
             validUser.password
         );

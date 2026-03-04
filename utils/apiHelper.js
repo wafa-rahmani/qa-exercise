@@ -14,10 +14,6 @@ async function sendInvalidJsonRequest(apiClient, endpoint, body) {
     });
 }
 
-async function sendLoginRequest(apiClient, endpoint, user, password) {
-    return await sendPostRequest(apiClient, endpoint, { user, password });
-}
-
 async function sendProxyLoginRequest(proxyClient, endpoint, user, password) {
     return await sendPostRequest(proxyClient, endpoint, { user, password });
 }
@@ -39,19 +35,6 @@ function validateResponseFields(responseBody, expectedFields) {
     };
 }
 
-function validateFieldsRemoved(responseBody, forbiddenFields) {
-    const found = [];
-    for (const field of forbiddenFields) {
-        if (field in responseBody) {
-            found.push(field);
-        }
-    }
-    return {
-        valid: found.length === 0,
-        found: found,
-    };
-}
-
 async function getResponseBody(response) {
     try {
         return await response.json();
@@ -70,11 +53,9 @@ function validateProxyResponse(responseBody, expectedFields = ['token', 'passwor
 module.exports = {
     sendPostRequest,
     sendInvalidJsonRequest,
-    sendLoginRequest,
     sendProxyLoginRequest,
     sendProxyToDownstreamLoginRequest,
     validateResponseFields,
-    validateFieldsRemoved,
     getResponseBody,
     validateProxyResponse,
 };

@@ -9,14 +9,8 @@ async function sendInvalidJsonRequest(apiClient, endpoint, body) {
     });
 }
 
-async function LoginToProxy(proxyClient, user, password) {
-    return await proxyClient.post(config.endpoints.login, {
-        data: { user, password },
-    });
-}
-
-async function LoginToDownstream(downstreamClient, user, password) {
-    return await downstreamClient.post(config.endpoints.login, {
+async function Login(client, user, password) {
+    return await client.post(config.endpoints.login, {
         data: { user, password },
     });
 }
@@ -51,8 +45,7 @@ function validateProxyResponse(responseBody, expectedFields = ['token', 'passwor
 
 module.exports = {
     sendInvalidJsonRequest,
-    LoginToProxy,
-    LoginToDownstream,
+    Login,
     validateResponseFields,
     getResponseBody,
     validateProxyResponse,

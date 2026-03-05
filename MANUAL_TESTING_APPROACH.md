@@ -767,16 +767,18 @@ The following 2 tests fail due to bugs in the proxy service (`main.py`) :
 
 ## Test Summary Table
 
-| # | Test Name | Method | Endpoint | Status | Passing |
-|---|-----------|--------|----------|--------|---------|
-| 1 | Valid Request | POST | `/api/login` | 200 | ✅ |
-| 2 | Missing User Key | POST | `/api/login` | 400 | ✅ |
-| 3 | Missing Password Key | POST | `/api/login` | 400 | ✅ |
-| 4 | Invalid JSON Format | POST | `/api/login` | 400 | ❌ (returns 500) |
-| 5 | Response Fields Preserved | POST | `/api/login` | 200 | ✅ |
-| 6 | User Key Policy | POST | `/api/login` | 200 | ❌ (user not removed) |
-| 7 | Downstream Validation - No User | POST | `/api/login` | 400 | ✅ |
-| 8 | Downstream Validation - No Password | POST | `/api/login` | 400 | ✅ |
+| # | Test Name | Method | Endpoint | Target | Status | Passing |
+|---|-----------|--------|----------|--------|--------|---------|
+| 1 | Valid Request | POST | `/api/login` | Proxy | 200 | ✅ |
+| 2 | Missing User Key | POST | `/api/login` | Proxy | 400 | ✅ |
+| 3 | Missing Password Key | POST | `/api/login` | Proxy | 400 | ✅ |
+| 4 | Invalid JSON Format | POST | `/api/login` | Proxy | 400 | ❌ (returns 500) |
+| 5 | Response Fields Preserved | POST | `/api/login` | Proxy | 200 | ✅ |
+| 6 | User Key Removal | POST | `/api/login` | Proxy | 200 | ❌ (user not removed) |
+| 7 | Downstream Valid Request | POST | `/api/login` | Downstream | 200 | ✅ |
+| 8 | Downstream User Key Present | POST | `/api/login` | Downstream | 200 | ✅ |
+| 9 | Downstream Missing User | POST | `/api/login` | Downstream | 400 | ✅ |
+| 10 | Downstream Missing Password | POST | `/api/login` | Downstream | 400 | ✅ |
 
 ---
 

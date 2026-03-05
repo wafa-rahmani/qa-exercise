@@ -30,16 +30,14 @@
       "description": "Missing user key",
       "data": {
         "password": "12345"
-      },
-      "expectedStatus": 400
+      }
     },
     "missingPasswordKey": {
       "id": "missingPasswordKey",
       "description": "Missing password key",
       "data": {
         "user": 40
-      },
-      "expectedStatus": 400
+      }
     },
     "emptyUserValue": {
       "id": "emptyUserValue",
@@ -47,8 +45,7 @@
       "data": {
         "user": "",
         "password": "12345"
-      },
-      "expectedStatus": 400
+      }
     },
     "nullUserValue": {
       "id": "nullUserValue",
@@ -56,8 +53,7 @@
       "data": {
         "user": null,
         "password": "12345"
-      },
-      "expectedStatus": 400
+      }
     }
   }
 }

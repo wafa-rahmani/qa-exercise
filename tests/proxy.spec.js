@@ -1,4 +1,4 @@
-const { test, expect } = require('../fixtures/request');
+const { test, expect } = require('../fixtures/request.fixture');
 const {
     sendInvalidJsonRequest,
     login,
@@ -25,8 +25,7 @@ test('CLIENT to PROXY: user key present in request - should accept', async ({ pr
     const validUser = testData.validUsers.user1;
     const response = await login(
         proxyClient,
-        validUser.user,
-        validUser.password
+        { user: validUser.user, password: validUser.password }
     );
 
     expect(response.status()).toBe(200);
@@ -34,20 +33,22 @@ test('CLIENT to PROXY: user key present in request - should accept', async ({ pr
 
 test('CLIENT to PROXY: user key missing in request - should return 400', async ({ proxyClient }) => {
     const invalidRequest = testData.invalidRequests.missingUserKey;
-    const response = await proxyClient.post(config.endpoints.login, {
-        data: invalidRequest.data,
-    });
+    const response = await login(
+        proxyClient,
+        invalidRequest.data
+    );
 
-    expect(response.status()).toBe(invalidRequest.expectedStatus);
+    expect(response.status()).toBe(400);
 });
 
 test('CLIENT to PROXY: password key missing in request - should return 400', async ({ proxyClient }) => {
     const invalidRequest = testData.invalidRequests.missingPasswordKey;
-    const response = await proxyClient.post(config.endpoints.login, {
-        data: invalidRequest.data,
-    });
+    const response = await login(
+        proxyClient,
+        invalidRequest.data
+    );
 
-    expect(response.status()).toBe(invalidRequest.expectedStatus);
+    expect(response.status()).toBe(400);
 });
 
 test('CLIENT to PROXY: invalid JSON format - should return 400', async ({ proxyClient }) => {
@@ -68,8 +69,7 @@ test('PROXY to CLIENT: user key removed from response', async ({ proxyClient }) 
     const validUser = testData.validUsers.user1;
     const response = await login(
         proxyClient,
-        validUser.user,
-        validUser.password
+        { user: validUser.user, password: validUser.password }
     );
 
     expect(response.status()).toBe(200);
@@ -85,8 +85,7 @@ test('PROXY to CLIENT: other fields preserved in response', async ({ proxyClient
     const validUser = testData.validUsers.user1;
     const response = await login(
         proxyClient,
-        validUser.user,
-        validUser.password
+        { user: validUser.user, password: validUser.password }
     );
 
     expect(response.status()).toBe(200);
@@ -119,8 +118,7 @@ test('EDGE CASE: multiple valid users can authenticate', async ({ proxyClient })
     for (const validUser of Object.values(testData.validUsers)) {
         const response = await login(
             proxyClient,
-            validUser.user,
-            validUser.password
+            { user: validUser.user, password: validUser.password }
         );
 
         expect(response.status()).toBe(200);

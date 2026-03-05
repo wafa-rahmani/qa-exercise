@@ -9,9 +9,9 @@ async function sendInvalidJsonRequest(apiClient, endpoint, body) {
     });
 }
 
-async function login(client, user, password) {
+async function login(client, json) {
     return await client.post(config.endpoints.login, {
-        data: { user, password },
+        data: json,
     });
 }
 

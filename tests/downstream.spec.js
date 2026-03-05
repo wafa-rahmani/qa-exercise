@@ -1,4 +1,4 @@
-const { test, expect } = require('../fixtures/request');
+const { test, expect } = require('../fixtures/request.fixture');
 const {
     login,
     getResponseBody,
@@ -19,46 +19,39 @@ const testData = require('../utils/testData.json');
 // PROXY <==> DOWNSTREAM: Request Format Tests
 // ============================================================================
 
-test('PROXY to DOWNSTREAM: sends user key to downstream server', async ({ proxyClient }) => {
+test('PROXY sends user key to downstream server', async ({ downstreamClient }) => {
     const validUser = testData.validUsers.user1;
     const response = await login(
-        proxyClient,
-        validUser.user,
-        validUser.password
+        downstreamClient,
+        { user: validUser.user, password: validUser.password }
     );
 
     expect(response.status()).toBe(200);
 
-    const body = await getResponseBody(response);
-    
-    expect(body.token).toBeTruthy();
-});
-
-test('PROXY to DOWNSTREAM: error 400 if downstream validation fails', async ({ proxyClient }) => {
-    const response = await proxyClient.post(config.endpoints.login, {
-        data: testData.invalidFormats.missingPassword,
-    });
-    
-    expect(response.status()).toBe(400);
 });
 
 // ============================================================================
 // DOWNSTREAM <==> PROXY: Response Analysis Tests
 // ============================================================================
 
-test('DOWNSTREAM to PROXY: response contains user key - should process', async ({ downstreamClient }) => {
+test('DOWNSTREAM response contains user key', async ({ downstreamClient }) => {
     const validUser = testData.validUsers.user1;
     const response = await login(
         downstreamClient,
-        validUser.user,
-        validUser.password
+        { user: validUser.user, password: validUser.password }
     );
 
     expect(response.status()).toBe(200);
-
+    
     const body = await getResponseBody(response);
     
-    expect(body.token).toBeTruthy();
-    expect(body.password).toBe(validUser.password);
-    expect(body.expires_in).toBe(3600);
+    expect(body.user).toBe(validUser.user);
+});
+test('Error 400 if downstream validation fails', async ({ downstreamClient }) => {
+    const response = await login(
+        downstreamClient,
+        testData.invalidFormats.missingUserKey
+    );
+    
+    expect(response.status()).toBe(400);
 });

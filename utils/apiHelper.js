@@ -1,14 +1,5 @@
 const config = require('./config.json');
 
-async function sendInvalidJsonRequest(apiClient, endpoint, body) {
-    return await apiClient.post(endpoint, {
-        headers: {
-            'Content-Type': 'text/plain',
-        },
-        body: body,
-    });
-}
-
 async function login(client, json) {
     return await client.post(config.endpoints.login, {
         data: json,
@@ -55,7 +46,6 @@ async function checkResponseOtherFields(response) {
 }
 
 module.exports = {
-    sendInvalidJsonRequest,
     login,
     validateResponseFields,
     getResponseBody,

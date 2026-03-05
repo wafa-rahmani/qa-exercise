@@ -75,7 +75,6 @@ Reusable API interaction and validation functions:
 
 **Request Helpers:**
 - `login(client, json)` - Send login request (works with proxy or downstream client)
-- `sendInvalidJsonRequest(apiClient, endpoint, body)` - Send request with invalid JSON format
 
 **Response Helpers:**
 - `getResponseBody(response)` - Parse JSON response body

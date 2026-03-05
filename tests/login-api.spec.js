@@ -24,15 +24,14 @@ describe('CLIENT ==> PROXY: Request Validation', () => {
     });
 
     test('Missing user key in request returns 400', async ({ proxyClient }) => {
-        const invalidRequest = testData.invalidRequests.missingUserKey;
-        const response = await login(proxyClient, invalidRequest.data);
+
+        const response = await login(proxyClient, testData.invalidUsers.missingUser);
 
         expect(response.status()).toBe(400);
     });
 
     test('Missing password key in request returns 400', async ({ proxyClient }) => {
-        const invalidRequest = testData.invalidRequests.missingPasswordKey;
-        const response = await login(proxyClient, invalidRequest.data);
+        const response = await login(proxyClient, testData.invalidUsers.missingPassword);
 
         expect(response.status()).toBe(400);
     });

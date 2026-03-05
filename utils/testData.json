@@ -13,40 +13,12 @@
       "password": "securePass456"
     }
   },
-  "invalidFormats": {
+  "invalidUsers": {
     "missingPassword": {
       "user": 40
     },
     "missingUser": {
       "password": "password123"
-    }
-  },
-  "invalidRequests": {
-    "missingUserKey": {
-      "description": "Missing user key",
-      "data": {
-        "password": "12345"
-      }
-    },
-    "missingPasswordKey": {
-      "description": "Missing password key",
-      "data": {
-        "user": 40
-      }
-    },
-    "emptyUserValue": {
-      "description": "Empty user value",
-      "data": {
-        "user": "",
-        "password": "12345"
-      }
-    },
-    "nullUserValue": {
-      "description": "Null user value",
-      "data": {
-        "user": null,
-        "password": "12345"
-      }
     }
   }
 }

@@ -62,8 +62,7 @@ Benefits:
 ### `utils/testData.json`
 Centralized test data file containing:
 - **`validUsers`** - Valid user credentials (user ID + password) for testing
-- **`invalidRequests`** - Invalid request scenarios (missing user, missing password)
-- **`invalidFormats`** - Invalid data formats (missing password, missing user)
+- **`invalidUsers`** - Invalid request scenarios (missing user, missing password)
 
 Benefits:
 - Single source of truth for test data

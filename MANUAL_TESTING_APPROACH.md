@@ -1,6 +1,8 @@
 # Manual Testing Guide for Proxy Service
 
-This guide provides comprehensive manual testing instructions for the proxy service : 
+This guide provides comprehensive manual testing instructions for the proxy service and downstream server interactions.
+
+## Testing Approaches
 
 ### 🔷 Postman (GUI-based)
 A visual, user-friendly API testing tool with features like:
@@ -57,7 +59,9 @@ The downstream server will start on `127.0.0.1:8085`
 
 ### Group 1: CLIENT <==> PROXY: Request Validation
 
-#### Test 1: User key present in request - should accept (200)
+#### Test 1: Valid Request - Status 200
+
+**Description:** Send a valid request with both user and password keys. The proxy should forward to downstream, receive response with user key, and return response WITHOUT user key to client.
 
 **Request Details:**
 - **Method:** POST
@@ -79,12 +83,17 @@ The downstream server will start on `127.0.0.1:8085`
 - **Response Body:**
   ```json
   {
-    "password": "12345",
-    "token": "random-token-string",
+    "token": "abc123xyz...",
     "expires_in": 3600
   }
   ```
-  *(Note: `user` key is removed by proxy)*
+  *(Note: `user` key is removed by proxy before sending to client)*
+
+**Validations:**
+- ✅ Status code is 200
+- ✅ `user` key is NOT in response (removed by proxy)
+- ✅ `token` field exists and is non-empty string
+- ✅ `expires_in` equals 3600
 
 **Steps in Postman:**
 1. Click "New" → "Request"
@@ -94,28 +103,30 @@ The downstream server will start on `127.0.0.1:8085`
 5. Go to Headers tab, add `Content-Type: application/json`
 6. Go to Body tab → select "raw" → paste the JSON above
 7. Click "Send"
+8. Verify status 200 and inspect response body
 
 **Using curl:**
 ```bash
 curl -X POST http://127.0.0.1:8000/api/login \
   -H "Content-Type: application/json" \
-  -d '{"user": 40, "password": "12345"}'
-```
-
-**With pretty-printed output (using jq):**
-```bash
-curl -X POST http://127.0.0.1:8000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"user": 40, "password": "12345"}' | jq
+  -d '{"user": 40, "password": "12345"}' \
+  -w "\nHTTP Status: %{http_code}\n"
 ```
 
 **Expected curl output:**
 ```json
 {
-  "password": "12345",
-  "token": "abc123...",
+  "token": "abc123xyz...",
   "expires_in": 3600
 }
+HTTP Status: 200
+```
+
+**With jq formatting:**
+```bash
+curl -s -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": 40, "password": "12345"}' | jq
 ```
 
 ---
@@ -141,16 +152,7 @@ curl -X POST http://127.0.0.1:8000/api/login \
 - **Response Body:**
   ```json
   {
-    "detail": [
-      {
-        "type": "missing",
-        "loc": ["body", "user"],
-        "msg": "Field required",
-        "input": {
-          "password": "12345"
-        }
-      }
-    ]
+    "detail": "Missing 'user' key in request body"
   }
   ```
 
@@ -751,9 +753,14 @@ curl -s -X POST $BASE_URL/api/unknown \
 
 Run with: `bash test_proxy.sh`
 
----
 
-## Postman Collection Tips
+
+**Test Organization:**
+- **CLIENT ==> PROXY: Request Validation** - 4 tests covering request handling
+- **PROXY ==> CLIENT: Response Transformation** - 2 tests covering response processing
+- **DOWNSTREAM: Request & Response Flow** - 4 tests covering integration
+
+---
 
 ### Export/Import Collection
 1. **Export:** Right-click collection → "Export" → save as JSON
@@ -850,21 +857,40 @@ curl: (7) Failed to connect to 127.0.0.1 port 8000: Connection refused
 
 ---
 
+## Test Status Summary
+
+**Current Test Results:**
+- ✅ **8 Tests Passing**
+- ❌ **2 Tests Failing**
+
+### Known Issues & Failures
+
+The following 2 tests fail due to bugs in the proxy service (`main.py`) :
+
+1. **Invalid JSON format returns 400** (Currently returns 500)
+   - Issue: `JSONDecodeError` not caught at line 14 of main.py
+   - Expected: 400 status code
+   - Actual: 500 status code
+   
+2. **Proxy removes user key from response** (User key still present)
+   - Issue: Line 24 removes "customer" key instead of "user" key
+   - Expected: `user` key absent in response
+   - Actual: `user` key present in response
+
+---
+
 ## Test Summary Table
 
-| # | Test Name | Method | URL | Status | Key Validation |
-|---|-----------|--------|-----|--------|-----------------|
-| 1 | Valid Request | POST | `/api/login` | 200 | User removed, fields preserved |
-| 2 | Missing User | POST | `/api/login` | 400 | Error response |
-| 3 | Missing Password | POST | `/api/login` | 400 | Error response |
-| 4 | Invalid JSON | POST | `/api/login` | 400 | Error response |
-| 5 | User Forwarding | POST | `/api/login` | 200 | User removed from response |
-| 6 | Downstream Fails | POST | `/api/login` | 400 | Error from downstream |
-| 7 | Response Processing | POST | `/api/login` | 200 | Fields preserved |
-| 8 | User Removed | POST | `/api/login` | 200 | User key absent |
-| 9 | Fields Preserved | POST | `/api/login` | 200 | All fields present |
-| 10 | Unknown Path | POST | `/api/unknown` | 404 | Not found |
-| 11 | Multiple Users | POST | `/api/login` | 200 | All succeed |
+| # | Test Name | Method | Endpoint | Status | Passing |
+|---|-----------|--------|----------|--------|---------|
+| 1 | Valid Request | POST | `/api/login` | 200 | ✅ |
+| 2 | Missing User Key | POST | `/api/login` | 400 | ✅ |
+| 3 | Missing Password Key | POST | `/api/login` | 400 | ✅ |
+| 4 | Invalid JSON Format | POST | `/api/login` | 400 | ❌ (returns 500) |
+| 5 | Response Fields Preserved | POST | `/api/login` | 200 | ✅ |
+| 6 | User Key Policy | POST | `/api/login` | 200 | ❌ (user not removed) |
+| 7 | Downstream Validation - No User | POST | `/api/login` | 400 | ✅ |
+| 8 | Downstream Validation - No Password | POST | `/api/login` | 400 | ✅ |
 
 ---
 
@@ -886,55 +912,3 @@ Use this checklist to manually verify all 5 requirements:
   
 - [ ] **Req 5:** "user" key is removed from response
   - Test: Send valid request → confirm "user" NOT in response
-
----
-
-## Quick Reference: curl Commands
-
-### Basic Test (200 OK)
-```bash
-curl -X POST http://127.0.0.1:8000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"user": 40, "password": "12345"}'
-```
-
-### Test with Status Code
-```bash
-curl -X POST http://127.0.0.1:8000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"user": 40, "password": "12345"}' \
-  -w "\nHTTP Status: %{http_code}\n"
-```
-
-### Test with Pretty JSON Output
-```bash
-curl -X POST http://127.0.0.1:8000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"user": 40, "password": "12345"}' | jq
-```
-
-### Verify User Key Removed
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"user": 40, "password": "12345"}' | jq 'has("user")'
-# Should return: false
-```
-
-### Test Missing User (400)
-```bash
-curl -X POST http://127.0.0.1:8000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"password": "12345"}' \
-  -w "\nHTTP Status: %{http_code}\n"
-# Should return: HTTP Status: 400
-```
-
-### Test Unknown Endpoint (404)
-```bash
-curl -X POST http://127.0.0.1:8000/api/unknown \
-  -H "Content-Type: application/json" \
-  -d '{"user": 40, "password": "12345"}' \
-  -w "\nHTTP Status: %{http_code}\n"
-# Should return: HTTP Status: 404
-```

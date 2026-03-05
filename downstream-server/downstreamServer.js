@@ -10,7 +10,7 @@ function generateRandomUser() {
     return Math.floor(Math.random() * 10000) + 1;
 }
 
-function createProxyDownstreamServer() {
+function createDownstreamServer() {
     return http.createServer((req, res) => {
         if (req.method !== 'POST') {
             res.writeHead(405, { 'Content-Type': 'application/json' });
@@ -63,4 +63,4 @@ function createProxyDownstreamServer() {
     });
 }
 
-module.exports = { createProxyDownstreamServer };
+module.exports = { createDownstreamServer };

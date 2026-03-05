@@ -36,10 +36,12 @@ async function getResponseBody(response) {
     }
 }
 
-function validateProxyResponse(responseBody, expectedFields = ['token', 'password', 'expires_in']) {
+async function validateProxyResponse(response, expectedFields = ['token', 'password', 'expires_in']) {
+    const responseBody = await getResponseBody(response);
     return {
         userRemoved: !('user' in responseBody),
         fieldsPresent: validateResponseFields(responseBody, expectedFields),
+        body: responseBody,
     };
 }
 

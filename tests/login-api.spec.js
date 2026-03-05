@@ -38,10 +38,7 @@ describe('CLIENT ==> PROXY: Request Validation', () => {
 
     test('Invalid JSON format returns 400', async ({ proxyClient }) => {
 
-        const response = await login(
-            proxyClient,
-            'not-a-json-body'
-        );
+        const response = await login(proxyClient,'not-a-json-body');
 
         expect(response.status()).toBe(400);
     });
@@ -54,11 +51,10 @@ describe('PROXY ==> CLIENT: Response Transformation', () => {
 
         expect(response.status()).toBe(200);
 
-        const body = await getResponseBody(response);
-        const validation = validateProxyResponse(body);
+        const validation = await validateProxyResponse(response);
 
         expect(validation.userRemoved).toBe(true);
-        expect(body.user).toBeUndefined();
+        expect(validation.body.user).toBeUndefined();
     });
 
     test('Proxy preserves other response fields', async ({ proxyClient }) => {
@@ -95,7 +91,7 @@ describe('DOWNSTREAM: Request & Response Flow', () => {
     test('Downstream validation failure returns 400 : missing user key', async ({ downstreamClient }) => {
         const response = await login(
             downstreamClient,
-            testData.invalidFormats.missingUser
+            testData.invalidUsers.missingUser
         );
 
         expect(response.status()).toBe(400);
@@ -104,7 +100,7 @@ describe('DOWNSTREAM: Request & Response Flow', () => {
     test('Downstream validation failure returns 400 : missing password key', async ({ downstreamClient }) => {
         const response = await login(
             downstreamClient,
-            testData.invalidFormats.missingPassword
+            testData.invalidUsers.missingPassword
         );
 
         expect(response.status()).toBe(400);

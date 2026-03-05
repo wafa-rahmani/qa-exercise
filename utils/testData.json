@@ -14,11 +14,11 @@
     }
   },
   "invalidUsers": {
-    "missingPassword": {
-      "user": 40
-    },
     "missingUser": {
       "password": "password123"
+    },
+    "missingPassword": {
+      "user": 40
     }
   }
 }

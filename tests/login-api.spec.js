@@ -4,6 +4,7 @@ const {
     login,
     getResponseBody,
     validateProxyResponse,
+    checkResponseOtherFields,
 } = require('../utils/apiHelper');
 const config = require('../utils/config.json');
 const testData = require('../utils/testData.json');
@@ -62,11 +63,9 @@ describe('PROXY ==> CLIENT: Response Transformation', () => {
 
         expect(response.status()).toBe(200);
 
-        const body = await getResponseBody(response);
+        const isValid = await checkResponseOtherFields(response);
 
-        expect(body.token).toBeTruthy();
-        expect(typeof body.token).toBe('string');
-        expect(body.expires_in).toBe(3600);
+        expect(isValid).toBe(true);
     });
 });
 
@@ -112,12 +111,7 @@ describe('Edge Cases', () => {
     test('Unknown API endpoint returns 400', async ({ proxyClient }) => {
 
         const validUser = testData.validUsers.user1;
-        const response = await proxyClient.post(config.endpoints.unknown, {
-            data: {
-                user: validUser.user,
-                password: validUser.password
-            }
-        });
+        const response = await proxyClient.post(config.endpoints.unknown, testData.validUsers.user1);
 
         expect(response.status()).toBe(400);
     });

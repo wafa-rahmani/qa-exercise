@@ -45,10 +45,20 @@ async function validateProxyResponse(response, expectedFields = ['token', 'passw
     };
 }
 
+async function checkResponseOtherFields(response) {
+    const responseBody = await getResponseBody(response);
+    return (
+        responseBody.token &&
+        typeof responseBody.token === 'string' &&
+        responseBody.expires_in === 3600
+    );
+}
+
 module.exports = {
     sendInvalidJsonRequest,
     login,
     validateResponseFields,
     getResponseBody,
     validateProxyResponse,
+    checkResponseOtherFields,
 };

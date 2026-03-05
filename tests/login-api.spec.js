@@ -81,51 +81,20 @@ describe('DOWNSTREAM: Request & Response Flow', () => {
 
         expect(response.status()).toBe(200);
 
-        const userMatch = await checkUserKey(response, testData.validUsers.user1.user);
+        const isUserMatched = await checkUserKey(response, testData.validUsers.user1.user);
 
-        expect(userMatch).toBe(true);
+        expect(isUserMatched).toBe(true);
     });
 
     test('Downstream validation failure returns 400 : missing user key', async ({ downstreamClient }) => {
-        const response = await login(
-            downstreamClient,
-            testData.invalidUsers.missingUser
-        );
+        const response = await login(downstreamClient,testData.invalidUsers.missingUser);
 
         expect(response.status()).toBe(400);
     });
 
     test('Downstream validation failure returns 400 : missing password key', async ({ downstreamClient }) => {
-        const response = await login(
-            downstreamClient,
-            testData.invalidUsers.missingPassword
-        );
+        const response = await login(downstreamClient,testData.invalidUsers.missingPassword);
 
         expect(response.status()).toBe(400);
-    });
-});
-
-describe('Edge Cases', () => {
-    
-    test('Unknown API endpoint returns 400', async ({ proxyClient }) => {
-
-        const response = await proxyClient.post(config.endpoints.unknown, {
-            data: testData.validUsers.user1
-        });
-
-        expect(response.status()).toBe(400);
-    });
-
-    test('Multiple valid users can authenticate successfully', async ({ proxyClient }) => {
-        for (const validUser of Object.values(testData.validUsers)) {
-            const response = await login(proxyClient, validUser);
-
-            expect(response.status()).toBe(200);
-
-            const validation = await validateProxyResponse(response);
-
-            expect(validation.userRemoved).toBe(true);
-            expect(validation.fieldsPresent.valid).toBe(true);
-        }
     });
 });

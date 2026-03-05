@@ -3,14 +3,6 @@
     "user1": {
       "user": 40,
       "password": "12345"
-    },
-    "user2": {
-      "user": 100,
-      "password": "password123"
-    },
-    "user3": {
-      "user": 999,
-      "password": "securePass456"
     }
   },
   "invalidUsers": {

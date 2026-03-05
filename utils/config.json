@@ -1,7 +1,6 @@
 {
     "endpoints": {
-        "login": "/api/login",
-        "unknown": "/api/unknown"
+        "login": "/api/login"
     },
     "baseURL": {
         "proxy": "http://127.0.0.1:8000",

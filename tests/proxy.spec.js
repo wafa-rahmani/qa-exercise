@@ -1,6 +1,5 @@
 const { test, expect } = require('../fixtures/request.fixture');
 const {
-    sendInvalidJsonRequest,
     login,
     getResponseBody,
     validateProxyResponse,
@@ -52,9 +51,8 @@ test('CLIENT to PROXY: password key missing in request - should return 400', asy
 });
 
 test('CLIENT to PROXY: invalid JSON format - should return 400', async ({ proxyClient }) => {
-    const response = await sendInvalidJsonRequest(
+    const response = await login(
         proxyClient,
-        config.endpoints.login,
         'not-a-json-body'
     );
 

@@ -71,7 +71,7 @@ describe('PROXY ==> CLIENT: Response Transformation', () => {
 
 describe('DOWNSTREAM: Request & Response Flow', () => {
     
-    test('Proxy forwards user key to downstream server', async ({ downstreamClient }) => {
+    test('Valid request to DOWNSTREAM with user and password keys is accepted', async ({ downstreamClient }) => {
         const response = await login(downstreamClient, testData.validUsers.user1);
         expect(response.status()).toBe(200);
     });

@@ -10,8 +10,7 @@ qa-exercise/
 ├── package.json                   # npm configuration and dependencies
 ├── playwright.config.js           # Playwright configuration with tracing and HTML reports
 ├── tests/
-│   ├── downstream.spec.js        # Downstream server tests (3 tests)
-│   └── proxy.spec.js             # Proxy tests (8 tests)
+│   └── login-api.spec.js         # Complete test suite (11 tests)
 ├── fixtures/
 │   └── request.js                # Custom Playwright test fixtures (proxyClient, downstreamClient)
 └── utils/
@@ -93,38 +92,31 @@ Benefits:
 
 ### Test Specifications (tests/)
 
-Tests are organized into 2 spec files by scope for better maintainability:
+Tests are organized in a single consolidated spec file for complete coverage:
 
-#### `downstream.spec.js` - Downstream Server Tests (3 tests)
-Validates all interactions with the downstream server including request forwarding and response analysis.
+#### `login-api.spec.js` - Complete API Integration Tests (11 tests)
+Comprehensive test suite covering all proxy and downstream server interactions.
 
-**PROXY <==> DOWNSTREAM: Request Format Tests**
-1. **Sends user key to downstream server** - Validates proxy forwards requests correctly through the proxy
-2. **Error 400 if downstream validation fails** - Proxy returns 400 when downstream rejects the request
+**CLIENT <==> PROXY: Request Validation (4 tests)**
+1. **Valid request with user and password keys is accepted** - Tests successful authentication
+2. **Missing user key in request returns 400** - Validates user key requirement
+3. **Missing password key in request returns 400** - Validates password key requirement
+4. **Invalid JSON format returns 400** - Validates JSON format requirement
 
-**DOWNSTREAM <==> PROXY: Response Analysis Tests**
-3. **Response contains user key - should process** - Validates downstream returns proper response with user key
+**PROXY <==> CLIENT: Response Transformation (2 tests)**
+5. **Proxy removes user key from response to client** - Validates user field is stripped
+6. **Proxy preserves other response fields** - Validates response integrity (token, password, expires_in)
 
-**Covers:** Request forwarding, downstream communication, and response processing
+**PROXY <==> DOWNSTREAM: Request & Response Flow (3 tests)**
+7. **Proxy forwards user key to downstream server** - Validates request forwarding
+8. **Downstream response includes user key** - Validates downstream returns user key
+9. **Downstream validation failure returns 400** - Validates error handling
 
-#### `proxy.spec.js` - Proxy Tests (8 tests)
-Validates all proxy functionality including request validation, response transformation, and edge cases.
+**Edge Cases (2 tests)**
+10. **Unknown API endpoint returns 404** - Tests error handling for invalid endpoints
+11. **Multiple valid users can authenticate successfully** - Data-driven test with all users
 
-**CLIENT <==> PROXY: Request Validation Tests**
-1. **User key present in request** - Valid request should be accepted
-2. **User key missing in request** - Should return 400
-3. **Password key missing in request** - Should return 400
-4. **Invalid JSON format** - Should return 400
-
-**PROXY <==> CLIENT: Response Validation Tests**
-5. **User key removed from response** - Validates user field is stripped from response
-6. **Other fields preserved in response** - Validates response integrity
-
-**Edge Cases Tests**
-7. **Unknown API path returns 404** - Tests error handling for invalid endpoints
-8. **Multiple valid users can authenticate** - Data-driven test with all users from testData.json
-
-**Covers:** Requirements 1, 2, 3, and 5 (JSON validation, request validation, response transformation)
+**Covers:** All 5 requirements with comprehensive flow coverage
 
 ## Requirements Covered
 
@@ -132,11 +124,11 @@ All 5 original requirements are comprehensively tested across multiple scenarios
 
 | Requirement | Primary Tests | Status |
 |------------|---------------|--------|
-| 1. Proxy expects JSON request body | proxy.spec.js: Invalid JSON format test | ✅ |
-| 2. Request must have "user" key | proxy.spec.js: Missing user/password tests | ✅ |
+| 1. Proxy expects JSON request body | login-api.spec.js: Invalid JSON format test | ✅ |
+| 2. Request must have "user" key | login-api.spec.js: Missing user/password tests | ✅ |
 | 3. Response must be valid JSON | All tests validate JSON responses | ✅ |
-| 4. Response must have "user" key | downstream.spec.js: Downstream response test | ✅ |
-| 5. "user" key is removed from response | proxy.spec.js: User removal + field preservation tests | ✅ |
+| 4. Response must have "user" key | login-api.spec.js: Downstream response test | ✅ |
+| 5. "user" key is removed from response | login-api.spec.js: User removal + field preservation tests | ✅ |
 
 ### Flow Coverage
 
@@ -151,14 +143,13 @@ All 5 original requirements are comprehensively tested across multiple scenarios
 
 ## Test Architecture
 
-### Organized Test Structure
-Tests are split into 2 spec files by scope:
-- **downstream.spec.js:** Focuses on downstream server interactions and proxy-to-downstream forwarding
-- **proxy.spec.js:** Focuses on proxy functionality, request validation, response transformation, and edge cases
-- **Clear separation of concerns:** Downstream tests vs proxy tests are isolated
-- **Improved maintainability:** Each file has a focused purpose
-- **Easier debugging:** Failures are quickly categorized by scope
-- **Scalability:** New tests can be added to the appropriate file
+### Consolidated Test Structure
+All tests are organized in a single comprehensive spec file:
+- **login-api.spec.js:** Complete test suite covering all proxy and downstream server interactions
+- **Logical organization:** Tests grouped by flow stage (request validation, response transformation, server communication, edge cases)
+- **Clear separation:** Comments and sections clearly delineate different test categories
+- **Improved navigation:** All tests in one place with clear hierarchical structure
+- **Better maintainability:** Single source of truth for all API integration tests
 
 ### Data-Driven Approach
 Tests use centralized data from `utils/testData.json` and `utils/config.json`:

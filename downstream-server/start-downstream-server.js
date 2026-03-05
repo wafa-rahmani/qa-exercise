@@ -1,4 +1,4 @@
-const { createProxyDownstreamServer } = require('./downstreamServer');
+const { createProxyDownstreamServer } = require('../downstreamServer');
 
 const server = createProxyDownstreamServer();
 

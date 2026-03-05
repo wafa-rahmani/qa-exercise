@@ -1,15 +1,6 @@
 # Manual Testing Guide for Proxy Service
 
-> **Responding to: "Please also propose how can this service be tested manually."**
-
-This comprehensive guide demonstrates **manual testing approaches** for the proxy service without relying on automated test suites. Manual testing is valuable for:
-- **Exploratory testing** - Discovering edge cases and unexpected behaviors
-- **Quick validation** - Rapid testing during development
-- **Debugging** - Understanding request/response flows in detail
-- **Documentation** - Demonstrating API usage to stakeholders
-- **Learning** - Understanding how the proxy works
-
-## Two Manual Testing Approaches
+This guide provides comprehensive manual testing instructions for the proxy service : 
 
 ### 🔷 Postman (GUI-based)
 A visual, user-friendly API testing tool with features like:
@@ -20,8 +11,6 @@ A visual, user-friendly API testing tool with features like:
 - Team collaboration
 - Request history
 
-**Best for:** Interactive testing, learning the API, creating shareable test collections
-
 ### 🔶 curl (Command-line)
 A lightweight, scriptable HTTP client that:
 - Runs in any terminal
@@ -29,10 +18,6 @@ A lightweight, scriptable HTTP client that:
 - Can be automated in bash scripts
 - Integrates into CI/CD pipelines
 - Requires no installation (built-in on Unix systems)
-
-**Best for:** Quick testing, automation, remote server testing, scripting
-
-Both methods are covered in this guide with **step-by-step instructions** for all test cases.
 
 ## Prerequisites
 

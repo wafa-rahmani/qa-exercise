@@ -16,28 +16,29 @@ const testData = require('../utils/testData.json');
  */
 
 describe('CLIENT ==> PROXY: Request Validation', () => {
+   
     test('Valid request with user and password keys is accepted', async ({ proxyClient }) => {
-        const response = await login(proxyClient,testData.validUsers.user1);
+        const response = await login(proxyClient, testData.validUsers.user1);
 
         expect(response.status()).toBe(200);
     });
 
     test('Missing user key in request returns 400', async ({ proxyClient }) => {
         const invalidRequest = testData.invalidRequests.missingUserKey;
-        const response = await login(proxyClient,invalidRequest.data);
+        const response = await login(proxyClient, invalidRequest.data);
 
         expect(response.status()).toBe(400);
     });
 
     test('Missing password key in request returns 400', async ({ proxyClient }) => {
         const invalidRequest = testData.invalidRequests.missingPasswordKey;
-        const response = await login(proxyClient,invalidRequest.data);
+        const response = await login(proxyClient, invalidRequest.data);
 
         expect(response.status()).toBe(400);
     });
 
     test('Invalid JSON format returns 400', async ({ proxyClient }) => {
-        
+
         const response = await login(
             proxyClient,
             'not-a-json-body'
@@ -48,8 +49,9 @@ describe('CLIENT ==> PROXY: Request Validation', () => {
 });
 
 describe('PROXY ==> CLIENT: Response Transformation', () => {
-        test('Proxy removes user key from response to client', async ({ proxyClient }) => {
-        const response = await login(proxyClient,testData.validUsers.user1);
+    
+    test('Proxy removes user key from response to client', async ({ proxyClient }) => {
+        const response = await login(proxyClient, testData.validUsers.user1);
 
         expect(response.status()).toBe(200);
 
@@ -61,7 +63,7 @@ describe('PROXY ==> CLIENT: Response Transformation', () => {
     });
 
     test('Proxy preserves other response fields', async ({ proxyClient }) => {
-        const response = await login(proxyClient,testData.validUsers.user1);
+        const response = await login(proxyClient, testData.validUsers.user1);
 
         expect(response.status()).toBe(200);
 
@@ -74,19 +76,20 @@ describe('PROXY ==> CLIENT: Response Transformation', () => {
 });
 
 describe('DOWNSTREAM: Request & Response Flow', () => {
+    
     test('Proxy forwards user key to downstream server', async ({ downstreamClient }) => {
-    const response = await login(downstreamClient,testData.validUsers.user1);
+        const response = await login(downstreamClient, testData.validUsers.user1);
         expect(response.status()).toBe(200);
     });
 
     test('Downstream response includes user key', async ({ downstreamClient }) => {
         const validUser = testData.validUsers.user1;
-        const response = await login(downstreamClient,testData.validUsers.user1);
+        const response = await login(downstreamClient, testData.validUsers.user1);
 
         expect(response.status()).toBe(200);
-        
+
         const body = await getResponseBody(response);
-        
+
         expect(body.user).toBe(validUser.user);
     });
 
@@ -95,7 +98,7 @@ describe('DOWNSTREAM: Request & Response Flow', () => {
             downstreamClient,
             testData.invalidFormats.missingUser
         );
-        
+
         expect(response.status()).toBe(400);
     });
 
@@ -104,14 +107,15 @@ describe('DOWNSTREAM: Request & Response Flow', () => {
             downstreamClient,
             testData.invalidFormats.missingPassword
         );
-        
+
         expect(response.status()).toBe(400);
     });
 });
 
 describe('Edge Cases', () => {
-        test('Unknown API endpoint returns 400', async ({ proxyClient }) => {
-        
+    
+    test('Unknown API endpoint returns 400', async ({ proxyClient }) => {
+
         const validUser = testData.validUsers.user1;
         const response = await proxyClient.post(config.endpoints.unknown, {
             data: {
@@ -125,12 +129,12 @@ describe('Edge Cases', () => {
 
     test('Multiple valid users can authenticate successfully', async ({ proxyClient }) => {
         for (const validUser of Object.values(testData.validUsers)) {
-            const response = await login(proxyClient,validUser);
+            const response = await login(proxyClient, validUser);
 
             expect(response.status()).toBe(200);
 
             const body = await getResponseBody(response);
-            
+
             expect(body.user).toBeUndefined();
             expect(body.token).toBeTruthy();
         }

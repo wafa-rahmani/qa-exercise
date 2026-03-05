@@ -6,7 +6,8 @@ async function login(client, json) {
     });
 }
 
-function validateResponseFields(responseBody, expectedFields) {
+async function validateProxyResponse(response, expectedFields = ['token', 'password', 'expires_in']) {
+    const responseBody = await response.json();
     const missing = [];
     for (const field of expectedFields) {
         if (!(field in responseBody)) {
@@ -14,30 +15,22 @@ function validateResponseFields(responseBody, expectedFields) {
         }
     }
     return {
-        valid: missing.length === 0,
-        missing: missing,
-    };
-}
-
-async function getResponseBody(response) {
-    try {
-        return await response.json();
-    } catch (error) {
-        throw new Error(`Failed to parse response as JSON: ${error.message}`);
-    }
-}
-
-async function validateProxyResponse(response, expectedFields = ['token', 'password', 'expires_in']) {
-    const responseBody = await getResponseBody(response);
-    return {
         userRemoved: !('user' in responseBody),
-        fieldsPresent: validateResponseFields(responseBody, expectedFields),
+        fieldsPresent: {
+            valid: missing.length === 0,
+            missing: missing,
+        },
         body: responseBody,
     };
 }
 
+async function checkUserKey(response, expectedUser) {
+    const responseBody = await response.json();
+    return responseBody.user === expectedUser;
+}
+
 async function checkResponseOtherFields(response) {
-    const responseBody = await getResponseBody(response);
+    const responseBody = await response.json();
     return (
         responseBody.token &&
         typeof responseBody.token === 'string' &&
@@ -47,8 +40,7 @@ async function checkResponseOtherFields(response) {
 
 module.exports = {
     login,
-    validateResponseFields,
-    getResponseBody,
     validateProxyResponse,
+    checkUserKey,
     checkResponseOtherFields,
 };

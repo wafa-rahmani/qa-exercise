@@ -2,8 +2,8 @@ const { test, expect } = require('../fixtures/request.fixture');
 const { describe } = require('@playwright/test');
 const {
     login,
-    getResponseBody,
     validateProxyResponse,
+    checkUserKey,
     checkResponseOtherFields,
 } = require('../utils/apiHelper');
 const config = require('../utils/config.json');
@@ -81,9 +81,9 @@ describe('DOWNSTREAM: Request & Response Flow', () => {
 
         expect(response.status()).toBe(200);
 
-        const body = await getResponseBody(response);
+        const userMatch = await checkUserKey(response, testData.validUsers.user1.user);
 
-        expect(body.user).toBe(testData.validUsers.user1.user);
+        expect(userMatch).toBe(true);
     });
 
     test('Downstream validation failure returns 400 : missing user key', async ({ downstreamClient }) => {
@@ -109,7 +109,9 @@ describe('Edge Cases', () => {
     
     test('Unknown API endpoint returns 400', async ({ proxyClient }) => {
 
-        const response = await proxyClient.post(config.endpoints.unknown, testData.validUsers.user1);
+        const response = await proxyClient.post(config.endpoints.unknown, {
+            data: testData.validUsers.user1
+        });
 
         expect(response.status()).toBe(400);
     });
@@ -120,10 +122,10 @@ describe('Edge Cases', () => {
 
             expect(response.status()).toBe(200);
 
-            const body = await getResponseBody(response);
+            const validation = await validateProxyResponse(response);
 
-            expect(body.user).toBeUndefined();
-            expect(body.token).toBeTruthy();
+            expect(validation.userRemoved).toBe(true);
+            expect(validation.fieldsPresent.valid).toBe(true);
         }
     });
 });

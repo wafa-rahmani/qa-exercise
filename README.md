@@ -9,14 +9,15 @@ qa-exercise/
 ├── README.md                      # This file
 ├── package.json                   # npm configuration and dependencies
 ├── playwright.config.js           # Playwright configuration with tracing and HTML reports
+├── MANUAL_TESTING_APPROACH.md    # Manual testing guide (Postman + curl)
 ├── tests/
-│   └── login-api.spec.js         # Complete test suite (11 tests)
+│   └── login-api.spec.js         # Complete test suite (10 tests in 3 describe blocks)
 ├── fixtures/
-│   └── request.js                # Custom Playwright test fixtures (proxyClient, downstreamClient)
+│   └── request.fixture.js        # Custom Playwright test fixtures (proxyClient, downstreamClient)
 └── utils/
     ├── config.json               # API configuration (endpoints, baseURL)
-    ├── testData.json             # Test data (users, invalid requests/formats)
-    └── apiHelper.js              # Reusable API interaction and validation functions
+    ├── testData.json             # Test data (users, invalid users)
+    └── apiHelper.js              # Reusable API interaction and validation helpers
 ```
 
 ## Core Files
@@ -34,7 +35,7 @@ Playwright configuration with:
 - **Reporter:** HTML report in `playwright-report` directory
 - **Retries:** 1 retry on failure
 
-### `fixtures/request.js`
+### `fixtures/request.fixture.js`
 Custom Playwright test fixtures extending the default test:
 
 1. **`proxyClient` (test-scoped)**
@@ -74,46 +75,44 @@ Benefits:
 Reusable API interaction and validation functions:
 
 **Request Helpers:**
-- `login(client, json)` - Send login request (works with proxy or downstream client)
+- `login(client, json)` - Send login request with status/body access (works with proxy or downstream client)
 
 **Response Helpers:**
-- `getResponseBody(response)` - Parse JSON response body
-- `validateResponseFields(body, expectedFields)` - Check if expected fields exist
-- `validateProxyResponse(body)` - Validate proxy-specific behavior (user removed, other fields present)
+- `validateProxyResponse(response, expectedFields)` - Validates response structure and user key removal (returns {userRemoved, fieldsPresent, body})
+- `checkResponseOtherFields(response)` - Checks if token field exists and expires_in equals 3600 (returns boolean)
+- `checkUserKey(response, expectedUser)` - Checks if user key matches expected value (returns boolean)
 
 Benefits:
-- DRY principle - no duplicated code in tests
-- Clear separation between proxy and downstream requests
-- Consistent API interactions across all tests
-- Easy to add new helper functions
-- Simplified test assertions
+- DRY principle - reusable validation logic across tests
+- Integrated JSON parsing - each helper handles response.json() internally
+- Boolean return types - simplifies test assertions
+- Clear validation semantics - function names indicate what they check
+- Maintainability - response parsing logic centralized
 
 ### Test Specifications (tests/)
 
-Tests are organized in a single consolidated spec file for complete coverage:
+Tests are organized in a single consolidated spec file with `describe()` blocks for logical grouping:
 
-#### `login-api.spec.js` - Complete API Integration Tests (11 tests)
+#### `login-api.spec.js` - Complete API Integration Tests (10 tests)
 Comprehensive test suite covering all proxy and downstream server interactions.
 
-**CLIENT <==> PROXY: Request Validation (4 tests)**
-1. **Valid request with user and password keys is accepted** - Tests successful authentication
-2. **Missing user key in request returns 400** - Validates user key requirement
-3. **Missing password key in request returns 400** - Validates password key requirement
-4. **Invalid JSON format returns 400** - Validates JSON format requirement
+**CLIENT ==> PROXY: Request Validation (4 tests)**
+- Valid request with user and password keys is accepted
+- Missing user key in request returns 400
+- Missing password key in request returns 400
+- Invalid JSON format returns 400
 
-**PROXY <==> CLIENT: Response Transformation (2 tests)**
-5. **Proxy removes user key from response to client** - Validates user field is stripped
-6. **Proxy preserves other response fields** - Validates response integrity (token, password, expires_in)
+**PROXY ==> CLIENT: Response Transformation (2 tests)**
+- Proxy removes user key from response to client (uses `validateProxyResponse()`)
+- Proxy preserves other response fields (uses `checkResponseOtherFields()`)
 
-**PROXY <==> DOWNSTREAM: Request & Response Flow (3 tests)**
-7. **Proxy forwards user key to downstream server** - Validates request forwarding
-8. **Downstream response includes user key** - Validates downstream returns user key
-9. **Downstream validation failure returns 400** - Validates error handling
+**DOWNSTREAM: Request & Response Flow (4 tests)**
+- Valid request to DOWNSTREAM with user and password keys is accepted
+- Downstream response includes user key (uses `checkUserKey()`)
+- Downstream validation failure returns 400 : missing user key
+- Downstream validation failure returns 400 : missing password key
 
-**Edge Cases (2 tests)**
-10. **Unknown API endpoint returns 404** - Tests error handling for invalid endpoints
-11. **Multiple valid users can authenticate successfully** - Data-driven test with all users
-
+**Organization:** Tests grouped with `test.describe()` blocks for better filtering and readability
 **Covers:** All 5 requirements with comprehensive flow coverage
 
 ## Requirements Covered
@@ -133,21 +132,18 @@ All 5 original requirements are comprehensively tested across multiple scenarios
 | Flow Stage | Tests | Count |
 |-----------|-------|-------|
 | CLIENT ➡️ PROXY | Request validation tests | 4 |
-| PROXY ➡️ DOWNSTREAM | Request forwarding tests | 2 |
-| DOWNSTREAM ➡️ PROXY | Response analysis tests | 1 |
 | PROXY ➡️ CLIENT | Response transformation tests | 2 |
-| Edge Cases | Unknown paths, data-driven tests | 2 |
-| **Total** | | **11** |
+| DOWNSTREAM Server | Direct downstream interaction tests | 4 |
+| **Total** | | **10** |
 
 ## Test Architecture
 
-### Consolidated Test Structure
-All tests are organized in a single comprehensive spec file:
-- **login-api.spec.js:** Complete test suite covering all proxy and downstream server interactions
-- **Logical organization:** Tests grouped by flow stage (request validation, response transformation, server communication, edge cases)
-- **Clear separation:** Comments and sections clearly delineate different test categories
-- **Improved navigation:** All tests in one place with clear hierarchical structure
-- **Better maintainability:** Single source of truth for all API integration tests
+### Consolidated Test Structure with describe() Blocks
+All tests are organized in a single comprehensive spec file with logical grouping:
+- **login-api.spec.js:** Complete test suite in 3 `describe()` blocks for better organization
+- **Logical organization:** Tests grouped by flow stage (request validation, response transformation, server communication)
+- **Improved navigation:** `test.describe()` blocks enable test filtering and hierarchical structure
+- **Clear separation:** Comment sections replaced with `describe()` blocks
 
 ### Data-Driven Approach
 Tests use centralized data from `utils/testData.json` and `utils/config.json`:
@@ -167,17 +163,20 @@ The `utils/apiHelper.js` module provides:
 
 Example comparison:
 ```javascript
-// Without helpers (verbose)
-const response = await proxyClient.post('/api/login', {
-    data: { user: 40, password: '12345' }
-});
-const body = await response.json();
-expect(body.user).toBeUndefined();
+// Test assertion patterns using helpers:
 
-// With helpers (concise)
-const response = await login(proxyClient, { user: 40, password: '12345' });
-const body = await getResponseBody(response);
-expect(validateProxyResponse(body).userRemoved).toBe(true);
+// Pattern 1: Validate proxy response (user removed + fields present)
+const validation = await validateProxyResponse(response);
+expect(validation.userRemoved).toBe(true);
+expect(validation.fieldsPresent.valid).toBe(true);
+
+// Pattern 2: Check specific response field
+const isValid = await checkResponseOtherFields(response);
+expect(isValid).toBe(true);
+
+// Pattern 3: Verify user key value
+const userMatch = await checkUserKey(response, expectedUser);
+expect(userMatch).toBe(true);
 ```
 
 ### Fixture Pattern
@@ -250,15 +249,28 @@ npx playwright show-trace test-results/[trace-path]/trace.zip
 
 ## Important Notes
 
+### Test Organization with describe() Blocks
+Tests use `test.describe()` blocks for logical grouping:
+- Improves test filtering with `--grep` pattern matching
+- Better readability with hierarchical test structure
+- Cleaner than comment-based separation
+- Enables running tests by describe block if needed
+
+Example: Run only proxy validation tests:
+```bash
+npm test -- --grep "CLIENT ==> PROXY"
+```
+
+### Helper Functions Design
+Helper functions handle JSON parsing internally:
+- `validateProxyResponse()` - Checks user removal + expected fields
+- `checkResponseOtherFields()` - Validates token and expires_in
+- `checkUserKey()` - Compares user values
+
+All return boolean or structured objects for simple assertions.
+
 ### Trace Configuration
 Traces are only generated for failed tests or retried tests (configured with `trace: 'on-first-retry'`). This saves storage while ensuring debugging info is available when needed.
-
-### Random Values
-The downstream server generates:
-- Random `user` ID (1-10000) if not provided in request
-- Random `token` on each response
-
-Tests use flexible assertions (`toBeTruthy()`, `typeof token === 'string'`) to handle randomness.
 
 ### Port Configuration
 - **Proxy:** `127.0.0.1:8000` (configured in `utils/config.json`)
@@ -297,3 +309,13 @@ npm test
 ```
 
 Test artifacts (traces, reports, ...) are stored in `test-results/` and `playwright-report/` directories.
+
+## Manual Testing
+
+For manual testing with Postman or curl CLI, see `MANUAL_TESTING_APPROACH.md` which includes:
+- Setup instructions
+- Detailed test cases with request/response examples
+- Postman step-by-step guides
+- curl command snippets
+- Known proxy service limitations
+- Troubleshooting tips
